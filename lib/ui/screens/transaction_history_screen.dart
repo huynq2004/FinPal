@@ -1,40 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/transaction_history_viewmodel.dart';
 import '../../domain/models/transaction.dart';
-import 'package:intl/intl.dart';
 
-class TransactionHistoryScreen extends StatefulWidget {
+class TransactionHistoryScreen extends StatelessWidget {
   const TransactionHistoryScreen({super.key});
 
   @override
-  State<TransactionHistoryScreen> createState() =>
-      _TransactionHistoryScreenState();
-}
-
-class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
-  final _dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
-
-  @override
-  void initState() {
-    super.initState();
-    // gọi load dữ liệu khi màn hình tạo
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TransactionHistoryViewModel>().loadFakeData();
-      // sau này thay bằng loadTransactionsForMonth(year, month)
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lịch sử giao dịch'),
       ),
       body: Consumer<TransactionHistoryViewModel>(
         builder: (context, vm, child) {
-          final items = vm.transactions;
+          final List<Transaction> items = vm.transactions;
 
           if (items.isEmpty) {
             return const Center(
@@ -57,7 +41,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     color: isIncome ? Colors.green : Colors.red,
                   ),
                   title: Text(
-                    _formatAmount(tx.amount, isIncome),
+                    '${tx.amount} đ',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: isIncome ? Colors.green : Colors.red,
@@ -68,7 +52,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     children: [
                       Text('Danh mục: ${tx.categoryName}'),
                       if (tx.bank != null) Text('Ngân hàng: ${tx.bank}'),
-                      Text('Thời gian: ${_dateFormatter.format(tx.createdAt)}'),
+                      Text('Thời gian: ${dateFormatter.format(tx.createdAt)}'),
                     ],
                   ),
                 ),
@@ -78,11 +62,5 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         },
       ),
     );
-  }
-
-  String _formatAmount(int amount, bool isIncome) {
-    // cậu có thể dùng NumberFormat ở đây nếu muốn format đẹp hơn
-    final formatted = '${amount.toString()} đ';
-    return isIncome ? '+ $formatted' : '- $formatted';
   }
 }

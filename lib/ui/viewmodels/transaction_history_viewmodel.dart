@@ -1,20 +1,24 @@
 import 'package:flutter/foundation.dart';
+
 import '../../domain/models/transaction.dart';
 
 class TransactionHistoryViewModel extends ChangeNotifier {
-  List<Transaction> _transactions = [];
-  List<Transaction> get transactions => _transactions;
+  List<Transaction> transactions = [];
 
-  // tạm dùng fake data
-  Future<void> loadFakeData() async {
-    _transactions = [
+  TransactionHistoryViewModel() {
+    loadFakeData();
+  }
+
+  void loadFakeData() {
+    // dữ liệu fake cho lịch sử giao dịch
+    transactions = [
       Transaction(
         id: 1,
         amount: 55000,
         type: 'expense',
         categoryName: 'Di chuyển',
         bank: 'VCB',
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
       ),
       Transaction(
         id: 2,
@@ -22,24 +26,18 @@ class TransactionHistoryViewModel extends ChangeNotifier {
         type: 'expense',
         categoryName: 'Ăn uống',
         bank: 'TCB',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
       ),
       Transaction(
         id: 3,
-        amount: 5000000,
+        amount: 3000000,
         type: 'income',
         categoryName: 'Lương',
-        bank: 'VCB',
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        bank: 'ACB',
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
       ),
     ];
-    notifyListeners();
-  }
 
-  // sau này dùng hàm này nếu đã có repository
-  Future<void> loadTransactionsForMonth(int year, int month) async {
-    // TODO: gọi TransactionRepository.getTransactionsByMonth(...)
-    // _transactions = await _transactionRepository.getTransactionsByMonth(year, month);
-    // notifyListeners();
+    notifyListeners();
   }
 }
