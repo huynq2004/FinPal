@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finpal/ui/viewmodels/ai_coach_viewmodel.dart';
 import 'package:finpal/domain/models/coach_message.dart';
+import 'package:finpal/data/repositories/ai_coach_repository.dart';
 
 class AiCoachScreen extends StatelessWidget {
   const AiCoachScreen({super.key});
 
-  Color _getTypeColor(BuildContext context, CoachMessageType type) {
+  Color _getTypeColor(CoachMessageType type) {
     switch (type) {
       case CoachMessageType.warning:
         return Colors.orange;
@@ -35,7 +36,11 @@ class AiCoachScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => AiCoachViewModel(),
+      create: (_) {
+        final vm = AiCoachViewModel(AiCoachRepository());
+        vm.loadMessages(); // ✅ load qua repository
+        return vm;
+      },
       child: Scaffold(
         appBar: AppBar(title: const Text('Trợ lý tài chính')),
         body: Consumer<AiCoachViewModel>(
@@ -49,7 +54,6 @@ class AiCoachScreen extends StatelessWidget {
               itemCount: vm.messages.length,
               itemBuilder: (context, index) {
                 final msg = vm.messages[index];
-                final color = _getTypeColor(context, msg.type);
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -58,7 +62,10 @@ class AiCoachScreen extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(_getTypeIcon(msg.type), color: color),
+                        Icon(
+                          _getTypeIcon(msg.type),
+                          color: _getTypeColor(msg.type),
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -70,10 +77,7 @@ class AiCoachScreen extends StatelessWidget {
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                msg.description,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
+                              Text(msg.description),
                             ],
                           ),
                         ),
