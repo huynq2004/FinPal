@@ -4,13 +4,19 @@ import '../../domain/models/transaction.dart';
 
 class TransactionHistoryViewModel extends ChangeNotifier {
   List<Transaction> transactions = [];
+  bool isLoading = false;
 
   TransactionHistoryViewModel() {
+    // Có thể auto load fake data ngay khi khởi tạo
     loadFakeData();
   }
 
-  void loadFakeData() {
-    // dữ liệu fake cho lịch sử giao dịch
+  Future<void> loadFakeData() async {
+    isLoading = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 200)); // giả delay
+
     transactions = [
       Transaction(
         id: 1,
@@ -38,6 +44,7 @@ class TransactionHistoryViewModel extends ChangeNotifier {
       ),
     ];
 
+    isLoading = false;
     notifyListeners();
   }
 }

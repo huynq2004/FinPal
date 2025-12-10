@@ -13,12 +13,17 @@ class FinPalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< Updated upstream
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (_) => TransactionHistoryViewModel(),
         ),
       ],
+=======
+    return ChangeNotifierProvider(
+      create: (_) => TransactionHistoryViewModel(),
+>>>>>>> Stashed changes
       child: MaterialApp(
         title: 'FinPal - Ví thông minh',
         theme: ThemeData(

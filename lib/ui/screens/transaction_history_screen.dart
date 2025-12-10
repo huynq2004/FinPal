@@ -18,6 +18,10 @@ class TransactionHistoryScreen extends StatelessWidget {
       ),
       body: Consumer<TransactionHistoryViewModel>(
         builder: (context, vm, child) {
+          if (vm.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           final List<Transaction> items = vm.transactions;
 
           if (items.isEmpty) {
