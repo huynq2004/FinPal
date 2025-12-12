@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/dashboard_viewmodel.dart';
-// import 'settings_screen.dart';
+import 'settings_screen.dart';
 import 'transaction_history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -44,17 +44,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
 
           // ✅ Mở Settings
-          // IconButton(
-          //   icon: const Icon(Icons.settings),
-          //   tooltip: 'Cài đặt',
-          //   onPressed: () {
-          //     Navigator.of(context).push(
-          //       MaterialPageRoute(
-          //         builder: (_) => const SettingsScreen(),
-          //       ),
-          //     );
-          //   },
-          // ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Cài đặt',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
       body: Consumer<DashboardViewModel>(
