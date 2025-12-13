@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'data/db/database_provider.dart';
+
 import 'ui/screens/transaction_history_screen.dart';
 import 'ui/viewmodels/transaction_history_viewmodel.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Giữ init DB từ develop
+  final db = await DatabaseProvider.instance.database;
+  // ignore: avoid_print
+  print('DB path: ${db.path}');
+
   runApp(const FinPalApp());
 }
 
@@ -21,7 +29,10 @@ class FinPalApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'FinPal',
-        theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.indigo,
+        ),
         home: const TransactionHistoryScreen(),
       ),
     );
