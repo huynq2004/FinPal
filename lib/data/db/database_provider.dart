@@ -26,6 +26,8 @@ class DatabaseProvider {
   }
 
   Future<void> createTables(Database db) async {
+    // TODO: Add CREATE TABLE queries here
+    // await db.execute('CREATE TABLE ...');
     // Transactions
     await db.execute('''
       CREATE TABLE transactions (
