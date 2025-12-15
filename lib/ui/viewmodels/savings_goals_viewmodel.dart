@@ -29,6 +29,30 @@ class SavingsGoalsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Tạo mới một mục tiêu tiết kiệm (tạm thời chỉ lưu trên RAM cho Sprint 1).
+  ///
+  /// Trong các sprint sau có thể gọi xuống [_repository] để lưu xuống DB thật.
+  void addGoal({
+    required String name,
+    required int targetAmount,
+    int initialSaved = 0,
+  }) {
+    // Tạo id tạm thời dựa trên length hiện tại.
+    final newId = (_goals.isEmpty ? 0 : _goals.last.id ?? 0) + 1;
+
+    final goal = SavingGoal(
+      id: newId,
+      name: name,
+      targetAmount: targetAmount,
+      currentSaved: initialSaved,
+      createdAt: DateTime.now(),
+      deadline: DateTime.now().add(const Duration(days: 90)),
+    );
+
+    _goals = [..._goals, goal];
+    notifyListeners();
+  }
+
   double progressOf(SavingGoal goal) {
     return goal.currentSaved / goal.targetAmount;
   }

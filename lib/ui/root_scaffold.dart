@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/dashboard_screen.dart';
 import 'screens/ai_coach_screen.dart';
+import 'screens/savings_goals_screen.dart';
 
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
@@ -17,7 +18,7 @@ class _RootScaffoldState extends State<RootScaffold> {
   final List<Widget> _pages = const [
     DashboardScreen(),
     SmartScanScreen(),
-    SavingJarScreen(),
+    SavingsGoalsScreen(),
     AiCoachScreen(),
   ];
 

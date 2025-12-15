@@ -31,6 +31,15 @@ class SavingsGoalsScreen extends StatelessWidget {
         return vm;
       },
       child: Scaffold(
+        floatingActionButton: Builder(
+          builder: (context) {
+            return FloatingActionButton.extended(
+              onPressed: () => _showCreateGoalSheet(context),
+              icon: const Icon(Icons.add),
+              label: const Text(''),
+            );
+          },
+        ),
         body: SafeArea(
           child: Consumer<SavingsGoalsViewModel>(
             builder: (context, vm, child) {
@@ -290,6 +299,94 @@ class SavingsGoalsScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showCreateGoalSheet(BuildContext context) {
+    final nameController = TextEditingController();
+    final targetController = TextEditingController();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final bottom = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottom),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Mục tiêu mới',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tên mục tiêu',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: targetController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Số tiền mục tiêu (đ)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final name = nameController.text.trim();
+                      final targetText = targetController.text
+                          .replaceAll('.', '')
+                          .replaceAll(',', '')
+                          .trim();
+                      final target = int.tryParse(targetText) ?? 0;
+
+                      if (name.isEmpty || target <= 0) {
+                        return;
+                      }
+
+                      context.read<SavingsGoalsViewModel>().addGoal(
+                        name: name,
+                        targetAmount: target,
+                      );
+
+                      Navigator.of(ctx).pop();
+                    },
+                    icon: const Icon(Icons.check),
+                    label: const Text('Tạo mục tiêu'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
