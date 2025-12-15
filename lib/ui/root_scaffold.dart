@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'screens/dashboard_screen.dart';
+import 'screens/ai_coach_screen.dart';
 
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
@@ -55,7 +56,6 @@ class _RootScaffoldState extends State<RootScaffold> {
   }
 }
 
-
 class SmartScanScreen extends StatelessWidget {
   const SmartScanScreen({super.key});
 
@@ -63,9 +63,7 @@ class SmartScanScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Smart Scan')),
-      body: const Center(
-        child: Text('Smart Scan sẽ làm ở sprint sau.'),
-      ),
+      body: const Center(child: Text('Smart Scan sẽ làm ở sprint sau.')),
     );
   }
 }
@@ -77,23 +75,7 @@ class SavingJarScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Hũ tiết kiệm')),
-      body: const Center(
-        child: Text('Hũ tiết kiệm sẽ làm ở sprint sau.'),
-      ),
-    );
-  }
-}
-
-class AiCoachScreen extends StatelessWidget {
-  const AiCoachScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Trợ lý AI')),
-      body: const Center(
-        child: Text('Trợ lý AI sẽ làm ở sprint sau.'),
-      ),
+      body: const Center(child: Text('Hũ tiết kiệm sẽ làm ở sprint sau.')),
     );
   }
 }
