@@ -345,13 +345,7 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
 				),
 			),
 		);
-										],
-									),
-								),
-							),
-						),
-					);
-				},
-			);
-		}
+			},
+		);
 	}
+}
