@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../viewmodels/dashboard_viewmodel.dart';
+import 'manual_transaction_screen.dart';
 import 'settings_screen.dart';
 import 'transaction_history_screen.dart';
 
@@ -144,6 +145,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ));
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const ManualTransactionScreen(),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
