@@ -89,5 +89,5 @@ class ManualTransactionViewModel extends ChangeNotifier {
       );
 
   String get formattedDate => DateFormat('dd/MM/yyyy').format(date);
-  String get formattedTime => time.format(const TimeOfDayFormat.HH_colon_mm);
+  String get formattedTime => '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 }
