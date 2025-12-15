@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 import '../viewmodels/dashboard_viewmodel.dart';
 import 'settings_screen.dart';
@@ -59,38 +60,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Consumer<DashboardViewModel>(
         builder: (context, vm, _) {
+          final fmt = NumberFormat.decimalPattern('vi');
+
+          String money(int value) => '${fmt.format(value)} đ';
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Tổng quan tháng này',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                // Balance card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.indigo.shade400, Colors.indigo.shade700],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(height: 12),
-                    _row('Tổng thu', vm.totalIncome, Colors.green),
-                    const SizedBox(height: 8),
-                    _row('Tổng chi', vm.totalExpense, Colors.red),
-                    const Divider(height: 24),
-                    _row(
-                      'Còn lại',
-                      vm.balance,
-                      vm.balance >= 0 ? Colors.blue : Colors.red,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Còn lại',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        money(vm.balance),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _smallSummaryCard('Tổng thu', money(vm.totalIncome), Colors.green.shade700),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _smallSummaryCard('Tổng chi', money(vm.totalExpense), Colors.red.shade700),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Recent transactions header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Giao dịch gần đây', style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TransactionHistoryScreen())),
+                      child: const Text('Xem tất cả'),
                     ),
                   ],
                 ),
-              ),
+
+                const SizedBox(height: 8),
+
+                // Recent transactions list
+                if (vm.recentTransactions.isEmpty)
+                  const Center(child: Text('Chưa có giao dịch nào'))
+                else
+                  Column(
+                    children: vm.recentTransactions
+                        .take(3)
+                        .map((tx) => _transactionPreviewTile(tx, fmt))
+                        .toList(),
+                  ),
+              ],
             ),
-          );
+          ));
         },
       ),
     );
@@ -106,6 +158,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: TextStyle(fontWeight: FontWeight.bold, color: color),
         ),
       ],
+    );
+  }
+
+  Widget _smallSummaryCard(String label, String amount, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white24,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 6),
+          Text(amount, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _transactionPreviewTile(tx, NumberFormat fmt) {
+    final isIncome = tx.type == 'income';
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: ListTile(
+        leading: Icon(
+          isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+          color: isIncome ? Colors.green : Colors.red,
+        ),
+        title: Text('${isIncome ? '+' : '-'} ${fmt.format(tx.amount)} đ',
+            style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? Colors.green : Colors.red)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Danh mục: ${tx.categoryName}'),
+            if (tx.bank != null) Text('Ngân hàng: ${tx.bank}'),
+          ],
+        ),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TransactionHistoryScreen())),
+      ),
     );
   }
 }
