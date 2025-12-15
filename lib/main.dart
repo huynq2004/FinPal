@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'data/db/database_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final db = await DatabaseProvider.instance.database;
+  // Debug log: print db path
+  print('DB path: ' + db.path);
   runApp(const MyApp());
 }
 
@@ -12,7 +17,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [],
+      providers: [
+        Provider<String>.value(value: 'test'), // Dummy provider to avoid empty children error
+      ],
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
