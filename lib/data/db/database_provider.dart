@@ -21,6 +21,7 @@ class DatabaseProvider {
       version: 1,
       onCreate: (db, version) async {
         await createTables(db);
+        await seedCategories(db);
       },
     );
   }
