@@ -129,6 +129,26 @@ class TransactionRepository {
     }
   }
 
+  Future<List<Transaction>> getTransactionsByMonth(int year, int month) async {
+    try {
+      final db = await _dbProvider.database;
+      
+      // Tính ngày đầu và cuối của tháng
+      final startDate = DateTime(year, month, 1);
+      final endDate = DateTime(year, month + 1, 0, 23, 59, 59);
+      
+      final List<Map<String, dynamic>> maps = await db.query(
+        'transactions',
+        where: 'date_time >= ? AND date_time <= ?',
+        whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
+        orderBy: 'date_time DESC',
+      );
+      return _mapToTransactions(maps);
+    } catch (e) {
+      throw Exception('Lỗi khi lấy giao dịch theo tháng: ${e.toString()}');
+    }
+  }
+
   // Helper method để giảm code duplication
   List<Transaction> _mapToTransactions(List<Map<String, dynamic>> maps) {
     return maps.map((map) => Transaction.fromMap(map)).toList();

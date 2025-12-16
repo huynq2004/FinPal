@@ -263,7 +263,7 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
 																					borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 0.67),
 																				),
 																			),
-																			onChanged: viewModel.setDescription,
+																			onChanged: (value) => viewModel.setDescription(value),
 																			validator: (value) {
 																				if (value == null || value.isEmpty) return 'Nhập nội dung';
 																				return null;
