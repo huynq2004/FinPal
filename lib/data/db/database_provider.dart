@@ -21,11 +21,14 @@ class DatabaseProvider {
       version: 1,
       onCreate: (db, version) async {
         await createTables(db);
+        await seedCategories(db);
       },
     );
   }
 
   Future<void> createTables(Database db) async {
+    // TODO: Add CREATE TABLE queries here
+    // await db.execute('CREATE TABLE ...');
     // Transactions
     await db.execute('''
       CREATE TABLE transactions (
