@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../../domain/models/transaction.dart';
+import '../../domain/models/category_stat.dart';
 
 class DashboardViewModel extends ChangeNotifier {
   int totalIncome = 0;
@@ -9,6 +11,13 @@ class DashboardViewModel extends ChangeNotifier {
   final List<Transaction> _recent = [];
 
   List<Transaction> get recentTransactions => List.unmodifiable(_recent);
+
+  List<CategoryStat> _categories = [];
+  List<CategoryStat> get categories => List.unmodifiable(_categories);
+
+  String monthLabel(int year, int month) {
+    return 'Tháng $month/$year';
+  }
 
   Future<void> loadSummary(int year, int month) async {
     // Sprint 1: fake data để DONE UI
@@ -46,6 +55,15 @@ class DashboardViewModel extends ChangeNotifier {
           note: 'GRAB',
         ),
       ]);
+
+    // Fake category stats for pie chart
+    _categories = [
+      const CategoryStat(name: 'Ăn uống', color: Color(0xFFFF6B6B), percent: 0.40, amount: 3280000),
+      const CategoryStat(name: 'Mua sắm', color: Color(0xFF4ECDC4), percent: 0.20, amount: 1640000),
+      const CategoryStat(name: 'Di chuyển', color: Color(0xFFFFD93D), percent: 0.15, amount: 1230000),
+      const CategoryStat(name: 'Hóa đơn', color: Color(0xFF95E1D3), percent: 0.10, amount: 820000),
+      const CategoryStat(name: 'Khác', color: Color(0xFFC7CEEA), percent: 0.15, amount: 1230000),
+    ];
 
     notifyListeners();
 
