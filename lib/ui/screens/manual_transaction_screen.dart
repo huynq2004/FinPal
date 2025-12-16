@@ -301,12 +301,19 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
 																						onPressed: () async {
 																							if (_formKey.currentState?.validate() ?? false) {
 																								try {
-																									await viewModel.saveTransaction();
-																									if (mounted) {
+																									final success = await viewModel.saveTransaction();
+																									if (mounted && success) {
 																										ScaffoldMessenger.of(context).showSnackBar(
 																											const SnackBar(content: Text('Đã lưu giao dịch thành công!')),
 																										);
-																										Navigator.of(context).pop();
+																										Navigator.of(context).pop(true);
+																									} else if (mounted && !success) {
+																										ScaffoldMessenger.of(context).showSnackBar(
+																											SnackBar(
+																												content: Text(viewModel.errorMessage ?? 'Có lỗi xảy ra khi lưu giao dịch'),
+																												backgroundColor: Colors.red,
+																											),
+																										);
 																									}
 																								} catch (e) {
 																									if (mounted) {
