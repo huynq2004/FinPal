@@ -11,7 +11,7 @@ class TransactionRepository {
       final db = await _dbProvider.database;
       final List<Map<String, dynamic>> maps = await db.query(
         'transactions',
-        orderBy: 'date_time DESC',
+        orderBy: 'created_at DESC',
       );
       return _mapToTransactions(maps);
     } catch (e) {
@@ -87,9 +87,9 @@ class TransactionRepository {
       final db = await _dbProvider.database;
       final List<Map<String, dynamic>> maps = await db.query(
         'transactions',
-        where: 'date_time >= ? AND date_time <= ?',
+        where: 'created_at >= ? AND created_at <= ?',
         whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
-        orderBy: 'date_time DESC',
+        orderBy: 'created_at DESC',
       );
       return _mapToTransactions(maps);
     } catch (e) {
@@ -106,7 +106,7 @@ class TransactionRepository {
         'transactions',
         where: 'type = ?',
         whereArgs: [type],
-        orderBy: 'date_time DESC',
+        orderBy: 'created_at DESC',
       );
       return _mapToTransactions(maps);
     } catch (e) {
@@ -114,14 +114,14 @@ class TransactionRepository {
     }
   }
 
-  Future<List<Transaction>> getTransactionsByCategory(String category) async {
+  Future<List<Transaction>> getTransactionsByCategory(int categoryId) async {
     try {
       final db = await _dbProvider.database;
       final List<Map<String, dynamic>> maps = await db.query(
         'transactions',
-        where: 'category = ?',
-        whereArgs: [category],
-        orderBy: 'date_time DESC',
+        where: 'category_id = ?',
+        whereArgs: [categoryId],
+        orderBy: 'created_at DESC',
       );
       return _mapToTransactions(maps);
     } catch (e) {
@@ -139,9 +139,9 @@ class TransactionRepository {
       
       final List<Map<String, dynamic>> maps = await db.query(
         'transactions',
-        where: 'date_time >= ? AND date_time <= ?',
+        where: 'created_at >= ? AND created_at <= ?',
         whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
-        orderBy: 'date_time DESC',
+        orderBy: 'created_at DESC',
       );
       return _mapToTransactions(maps);
     } catch (e) {
