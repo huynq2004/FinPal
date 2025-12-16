@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:finpal/domain/models/transaction.dart';
 import 'package:finpal/data/repositories/transaction_repository.dart';
+import 'package:finpal/data/repositories/categories_repository.dart';
 import 'package:finpal/data/db/database_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -92,14 +93,21 @@ class ManualTransactionViewModel extends ChangeNotifier {
         return false;
       }
 
+      // Lookup category ID from category name
+      final db = await DatabaseProvider.instance.database;
+      final categoriesRepo = CategoriesRepository(db);
+      final categoryId = await categoriesRepo.getCategoryIdByName(category);
+
       final repo = TransactionRepository(DatabaseProvider.instance);
       final transaction = Transaction(
         amount: amount,
         type: type == 'Chi tiêu' ? 'expense' : 'income',
+        categoryId: categoryId,
         categoryName: category,
         bank: source,
         createdAt: fullDateTime,
         note: note.isNotEmpty ? note : null,
+        source: 'manual',
       );
 
       await repo.insertTransaction(transaction);
