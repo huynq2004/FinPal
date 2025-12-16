@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/models/transaction.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../../data/db/database_provider.dart';
 
 class TransactionHistoryViewModel extends ChangeNotifier {
   final List<Transaction> _transactions = [];
@@ -18,6 +20,7 @@ class TransactionHistoryViewModel extends ChangeNotifier {
           bank: 'VCB',
           createdAt: DateTime.now().subtract(const Duration(hours: 2)),
           note: 'GRAB',
+          source: 'sms',
         ),
         Transaction(
           id: 2,
@@ -27,6 +30,7 @@ class TransactionHistoryViewModel extends ChangeNotifier {
           bank: 'TCB',
           createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 3)),
           note: 'THE COFFEE HOUSE',
+          source: 'sms',
         ),
         Transaction(
           id: 3,
@@ -36,12 +40,42 @@ class TransactionHistoryViewModel extends ChangeNotifier {
           bank: 'ACB',
           createdAt: DateTime.now().subtract(const Duration(days: 3)),
           note: 'Salary',
+          source: 'manual',
         ),
       ]);
 
     notifyListeners();
   }
 
-  // Sprint sau: khi có TransactionRepository thì thêm
-  // Future<void> loadFromDb(int year, int month) async { ... }
+  /// Load transactions from database for a specific month
+  Future<void> loadFromDb(int year, int month) async {
+    try {
+      final repo = TransactionRepository(DatabaseProvider.instance);
+      final transactions = await repo.getTransactionsByMonth(year, month);
+      _transactions
+        ..clear()
+        ..addAll(transactions);
+      notifyListeners();
+    } catch (e) {
+      // Log error or notify UI
+      debugPrint('Error loading transactions from DB: $e');
+      notifyListeners();
+    }
+  }
+
+  /// Reload all transactions from database
+  Future<void> loadAllFromDb() async {
+    try {
+      final repo = TransactionRepository(DatabaseProvider.instance);
+      final transactions = await repo.getAllTransactions();
+      _transactions
+        ..clear()
+        ..addAll(transactions);
+      notifyListeners();
+    } catch (e) {
+      // Log error or notify UI
+      debugPrint('Error loading transactions from DB: $e');
+      notifyListeners();
+    }
+  }
 }
