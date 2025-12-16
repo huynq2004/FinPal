@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:finpal/ui/viewmodels/savings_goals_viewmodel.dart';
 import 'package:finpal/domain/models/saving_goal.dart';
 import 'package:finpal/data/repositories/saving_goal_repository.dart';
+import 'package:finpal/ui/screens/create_saving_goal_screen.dart';
 
 class SavingsGoalsScreen extends StatelessWidget {
   const SavingsGoalsScreen({super.key});
@@ -34,9 +35,9 @@ class SavingsGoalsScreen extends StatelessWidget {
         floatingActionButton: Builder(
           builder: (context) {
             return FloatingActionButton.extended(
-              onPressed: () => _showCreateGoalSheet(context),
+              onPressed: () => _openCreateGoalScreen(context),
               icon: const Icon(Icons.add),
-              label: const Text(''),
+              label: const Text('Tạo mục tiêu'),
             );
           },
         ),
@@ -302,91 +303,26 @@ class SavingsGoalsScreen extends StatelessWidget {
     );
   }
 
-  void _showCreateGoalSheet(BuildContext context) {
-    final nameController = TextEditingController();
-    final targetController = TextEditingController();
+  Future<void> _openCreateGoalScreen(BuildContext context) async {
+    final savingsVm = context.read<SavingsGoalsViewModel>();
 
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    final result = await Navigator.of(context).push<SavingGoal?>(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: savingsVm,
+          child: const CreateSavingGoalScreen(),
+        ),
       ),
-      builder: (ctx) {
-        final bottom = MediaQuery.of(ctx).viewInsets.bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: bottom),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Mục tiêu mới',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tên mục tiêu',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: targetController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Số tiền mục tiêu (đ)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      final name = nameController.text.trim();
-                      final targetText = targetController.text
-                          .replaceAll('.', '')
-                          .replaceAll(',', '')
-                          .trim();
-                      final target = int.tryParse(targetText) ?? 0;
-
-                      if (name.isEmpty || target <= 0) {
-                        return;
-                      }
-
-                      context.read<SavingsGoalsViewModel>().addGoal(
-                        name: name,
-                        targetAmount: target,
-                      );
-
-                      Navigator.of(ctx).pop();
-                    },
-                    icon: const Icon(Icons.check),
-                    label: const Text('Tạo mục tiêu'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
+
+    if (result != null && context.mounted) {
+      context.read<SavingsGoalsViewModel>().addGoal(
+        name: result.name,
+        targetAmount: result.targetAmount,
+        initialSaved: result.currentSaved,
+        deadline: result.deadline,
+        createdAt: result.createdAt,
+      );
+    }
   }
 }

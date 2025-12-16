@@ -265,7 +265,7 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      initialValue: viewModel.category,
+                      value: viewModel.category,
                       items: _categories
                           .map(
                             (c) => DropdownMenuItem(
@@ -308,7 +308,7 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      initialValue: viewModel.source,
+                      value: viewModel.source,
                       items: _sources
                           .map(
                             (s) => DropdownMenuItem(
@@ -470,7 +470,7 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
                           ),
                         ),
                       ),
-                      onChanged: viewModel.setDescription,
+                      onChanged: (value) => viewModel.setDescription(value),
                       validator: (value) {
                         if (value == null || value.isEmpty)
                           return 'Nhập nội dung';
@@ -526,8 +526,9 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
                             onPressed: () async {
                               if (_formKey.currentState?.validate() ?? false) {
                                 try {
-                                  await viewModel.saveTransaction();
-                                  if (mounted) {
+                                  final success = await viewModel
+                                      .saveTransaction();
+                                  if (mounted && success) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -535,7 +536,17 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
                                         ),
                                       ),
                                     );
-                                    Navigator.of(context).pop();
+                                    Navigator.of(context).pop(true);
+                                  } else if (mounted && !success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          viewModel.errorMessage ??
+                                              'Có lỗi xảy ra khi lưu giao dịch',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
                                   }
                                 } catch (e) {
                                   if (mounted) {

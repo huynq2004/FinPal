@@ -17,7 +17,8 @@ class SavingsGoalsViewModel extends ChangeNotifier {
   /// For demo purposes return a suggested weekly saving for a goal.
   int suggestionFor(SavingGoal goal) {
     final name = goal.name.toLowerCase();
-    if (name.contains('tai nghe') || name.contains('tai nghe mới')) return 250000;
+    if (name.contains('tai nghe') || name.contains('tai nghe mới'))
+      return 250000;
     if (name.contains('đà lạt') || name.contains('đà nẵng')) return 300000;
     if (name.contains('laptop')) return 500000;
     return 200000;
@@ -36,6 +37,8 @@ class SavingsGoalsViewModel extends ChangeNotifier {
     required String name,
     required int targetAmount,
     int initialSaved = 0,
+    DateTime? deadline,
+    DateTime? createdAt,
   }) {
     // Tạo id tạm thời dựa trên length hiện tại.
     final newId = (_goals.isEmpty ? 0 : _goals.last.id ?? 0) + 1;
@@ -45,8 +48,8 @@ class SavingsGoalsViewModel extends ChangeNotifier {
       name: name,
       targetAmount: targetAmount,
       currentSaved: initialSaved,
-      createdAt: DateTime.now(),
-      deadline: DateTime.now().add(const Duration(days: 90)),
+      createdAt: createdAt ?? DateTime.now(),
+      deadline: deadline ?? DateTime.now().add(const Duration(days: 90)),
     );
 
     _goals = [..._goals, goal];
