@@ -42,6 +42,18 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
 		super.dispose();
 	}
 
+	@override
+	void initState() {
+		super.initState();
+		// Load categories from DB via ViewModel after widget is initialized
+		Future.microtask(() {
+			try {
+				final vm = context.read<ManualTransactionViewModel>();
+				vm.loadCategories();
+			} catch (_) {}
+		});
+	}
+
 	Future<void> _pickDate(BuildContext context, ManualTransactionViewModel viewModel) async {
 		final picked = await showDatePicker(
 			context: context,
@@ -62,9 +74,11 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
 
 	@override
 	Widget build(BuildContext context) {
-		return Consumer<ManualTransactionViewModel>(
-			builder: (context, viewModel, _) {
-				return Scaffold(
+			return Consumer<ManualTransactionViewModel>(
+				builder: (context, viewModel, _) {
+					final _categoryList = viewModel.categories.isNotEmpty ? viewModel.categories : _categories;
+					final _selectedCategory = _categoryList.contains(viewModel.category) ? viewModel.category : _categoryList.first;
+					return Scaffold(
 					backgroundColor: const Color(0xFFF5F7FA),
 					appBar: AppBar(
 						backgroundColor: Colors.white,
@@ -101,11 +115,7 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
 																					final v = int.tryParse(value);
 																					if (v != null) viewModel.setAmount(v);
 																				},
-																				validator: (value) {
-																					final v = int.tryParse(value ?? '');
-																					if (v == null || v <= 0) return 'Số tiền phải > 0';
-																					return null;
-																				},
+																				validator: (_) => viewModel.validateAmount(),
 								),
 								const SizedBox(height: 16),
 																		Text('Loại', style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontFamily: 'Arimo', fontWeight: FontWeight.w400)),
@@ -156,19 +166,19 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
 								const SizedBox(height: 16),
 								Text('Danh mục', style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontFamily: 'Arimo', fontWeight: FontWeight.w400)),
 								const SizedBox(height: 8),
-																		DropdownButtonFormField<String>(
-																			value: viewModel.category,
-																			items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontFamily: 'Arimo', fontWeight: FontWeight.w400)))).toList(),
-																			onChanged: (v) => viewModel.setCategory(v ?? viewModel.category),
-																			decoration: InputDecoration(
-																				filled: true,
-																				fillColor: Colors.white,
-																				border: OutlineInputBorder(
-																					borderRadius: BorderRadius.circular(14),
-																					borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 0.67),
-																				),
-																			),
-																		),
+								DropdownButtonFormField<String>(
+									value: _selectedCategory,
+									items: _categoryList.map((c) => DropdownMenuItem(value: c, child: Text(c, style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontFamily: 'Arimo', fontWeight: FontWeight.w400)))).toList(),
+									onChanged: (v) => viewModel.setCategory(v ?? viewModel.category),
+									decoration: InputDecoration(
+										filled: true,
+										fillColor: Colors.white,
+										border: OutlineInputBorder(
+											borderRadius: BorderRadius.circular(14),
+											borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 0.67),
+										),
+									),
+								),
 								const SizedBox(height: 16),
 								Text('Nguồn tiền', style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontFamily: 'Arimo', fontWeight: FontWeight.w400)),
 								const SizedBox(height: 8),
@@ -264,10 +274,7 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
 																				),
 																			),
 																			onChanged: (value) => viewModel.setDescription(value),
-																			validator: (value) {
-																				if (value == null || value.isEmpty) return 'Nhập nội dung';
-																				return null;
-																			},
+																			validator: (_) => viewModel.validateDescription(),
 																		),
 								const SizedBox(height: 16),
 								Text('Ghi chú (tùy chọn)', style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontFamily: 'Arimo', fontWeight: FontWeight.w400)),

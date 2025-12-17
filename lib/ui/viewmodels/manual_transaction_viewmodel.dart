@@ -13,10 +13,12 @@ class ManualTransactionViewModel extends ChangeNotifier {
   String source = 'Vietcombank';
   DateTime date = DateTime.now();
   TimeOfDay time = TimeOfDay.now();
-  String description = ''; // Add this field
+  String description = ''; 
   String note = '';
   String? errorMessage;
   bool isLoading = false;
+  List<String> categories = [];
+  bool categoriesLoading = false;
 
   void setAmount(int value) {
     amount = value;
@@ -58,6 +60,50 @@ class ManualTransactionViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Validation methods - Single source of truth
+  String? validateAmount() {
+    if (amount <= 0) return 'Số tiền phải > 0';
+    return null;
+  }
+
+  String? validateDescription() {
+    if (description.isEmpty) return 'Nhập nội dung';
+    return null;
+  }
+
+  /// Load categories from the local database. If none exist, seed defaults.
+  Future<void> loadCategories() async {
+    try {
+      categoriesLoading = true;
+      notifyListeners();
+
+      final db = await DatabaseProvider.instance.database;
+      final repo = CategoriesRepository(db);
+      var rows = await repo.getAllCategories();
+
+      if (rows.isEmpty) {
+        // Seed default categories then reload
+        await DatabaseProvider.instance.seedCategories(db);
+        rows = await repo.getAllCategories();
+      }
+
+      categories = rows
+          .map((r) => r['name']?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      // If current category is not in list, set to first available
+      if (categories.isNotEmpty && !categories.contains(category)) {
+        category = categories.first;
+      }
+    } catch (e) {
+      // ignore errors for now; keep existing defaults
+    } finally {
+      categoriesLoading = false;
+      notifyListeners();
+    }
+  }
+
   DateTime get fullDateTime => DateTime(
         date.year,
         date.month,
@@ -77,17 +123,18 @@ class ManualTransactionViewModel extends ChangeNotifier {
       errorMessage = null;
       notifyListeners();
 
-      // Validate
-      if (amount <= 0) {
-        errorMessage = 'Vui lòng nhập số tiền hợp lệ';
+      // Safety check - validate again using existing methods (defense in depth)
+      final amountError = validateAmount();
+      if (amountError != null) {
+        errorMessage = amountError;
         isLoading = false;
         notifyListeners();
         return false;
       }
 
-      // Add description validation if needed
-      if (description.isEmpty) {
-        errorMessage = 'Vui lòng nhập nội dung';
+      final descError = validateDescription();
+      if (descError != null) {
+        errorMessage = descError;
         isLoading = false;
         notifyListeners();
         return false;
