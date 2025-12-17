@@ -11,10 +11,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:finpal/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('App loads and shows bottom navigation', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const FinPalApp());
-    // Verify that the app boots and primary title is present
-    expect(find.text('FinPal'), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    // Bottom navigation should contain the AI tab label
+    expect(find.text('Trợ lý AI'), findsWidgets);
   });
 }
