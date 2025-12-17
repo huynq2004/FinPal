@@ -147,12 +147,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
+        onPressed: () async {
+          final result = await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => const ManualTransactionScreen(),
             ),
           );
+          
+          // Refresh summary if transaction was saved successfully
+          if (result == true && mounted) {
+            final now = DateTime.now();
+            context.read<DashboardViewModel>().loadSummary(now.year, now.month);
+          }
         },
         child: const Icon(Icons.add),
       ),
@@ -160,12 +166,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _row(String label, int amount, Color color) {
+    final formatter = NumberFormat('#,###', 'vi_VN');
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label),
         Text(
-          '$amount đ',
+          '${formatter.format(amount)} đ',
           style: TextStyle(fontWeight: FontWeight.bold, color: color),
         ),
       ],
