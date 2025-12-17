@@ -46,6 +46,29 @@ class Transaction {
   }
 
   factory Transaction.fromMap(Map<String, dynamic> map) {
+    // created_at in DB may be stored as TEXT (ISO string), INTEGER (ms since epoch),
+    // or already as a DateTime object depending on the source. Handle robustly.
+    final raw = map['created_at'] ?? map['createdAt'] ?? map['date_time'];
+    DateTime parsedDate;
+    if (raw == null) {
+      parsedDate = DateTime.now();
+    } else if (raw is DateTime) {
+      parsedDate = raw;
+    } else if (raw is int) {
+      parsedDate = DateTime.fromMillisecondsSinceEpoch(raw);
+    } else if (raw is String) {
+      // Some strings may be ISO formatted or a numeric string
+      final maybeInt = int.tryParse(raw);
+      if (maybeInt != null) {
+        parsedDate = DateTime.fromMillisecondsSinceEpoch(maybeInt);
+      } else {
+        parsedDate = DateTime.parse(raw);
+      }
+    } else {
+      // Fallback
+      parsedDate = DateTime.now();
+    }
+
     return Transaction(
       id: map['id'] as int?,
       amount: map['amount'] as int,
@@ -53,11 +76,18 @@ class Transaction {
       categoryId: map['category_id'] as int?,
       categoryName: map['categoryName'] ?? map['category'] ?? '',
       bank: map['bank'] as String?,
-      createdAt: DateTime.parse(map['created_at'] ?? map['createdAt'] ?? map['date_time']),
+      createdAt: parsedDate,
       note: map['note'] as String?,
       source: map['source'] as String? ?? 'manual',
     );
   }
+
+  /// Tên chính của giao dịch (GRAB, LƯƠNG THÁNG...)
+  String get title => note ?? categoryName;
+
+  /// Thời gian giao dịch (dùng thống nhất toàn app)
+  DateTime get time => createdAt;
+
 
   Map<String, dynamic> toMap() {
     return {
