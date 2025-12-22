@@ -6,6 +6,7 @@ import 'package:finpal/ui/viewmodels/savings_goals_viewmodel.dart';
 import 'package:finpal/domain/models/saving_goal.dart';
 import 'package:finpal/data/repositories/saving_goal_repository.dart';
 import 'package:finpal/ui/screens/create_saving_goal_screen.dart';
+import 'package:finpal/ui/screens/saving_goal_detail_screen.dart';
 
 class SavingsGoalsScreen extends StatelessWidget {
   const SavingsGoalsScreen({super.key});
@@ -164,131 +165,144 @@ class SavingsGoalsScreen extends StatelessWidget {
                         final progress = vm.progressOf(goal).clamp(0.0, 1.0);
                         final suggestion = vm.suggestionFor(goal);
 
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x0F000000),
-                                blurRadius: 6,
-                                offset: Offset(0, 1),
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    SavingGoalDetailScreen(goal: goal),
                               ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Column(
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0F000000),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            goal.name,
+                                            style: const TextStyle(
+                                              color: Color(0xFF0F172A),
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Mục tiêu: ${_formatCurrency(goal.targetAmount)}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF64748B),
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                          CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          goal.name,
+                                          _formatCurrency(goal.currentSaved),
                                           style: const TextStyle(
-                                            color: Color(0xFF0F172A),
+                                            color: Color(0xFF2ECC71),
                                             fontSize: 16,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          'Mục tiêu: ${_formatCurrency(goal.targetAmount)}',
+                                          '${(progress * 100).toStringAsFixed(0)}%',
                                           style: const TextStyle(
                                             color: Color(0xFF64748B),
-                                            fontSize: 14,
+                                            fontSize: 12,
                                           ),
                                         ),
                                       ],
                                     ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                // Progress bar background
+                                Container(
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF3F4F6),
+                                    borderRadius: BorderRadius.circular(999),
                                   ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        _formatCurrency(goal.currentSaved),
-                                        style: const TextStyle(
-                                          color: Color(0xFF2ECC71),
-                                          fontSize: 16,
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      return Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Container(
+                                          width:
+                                              constraints.maxWidth * progress,
+                                          decoration: const BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Color(0xFF3E8AFF),
+                                                Color(0xFF325DFF),
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(999),
+                                            ),
+                                          ),
                                         ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.trending_up,
+                                        color: Color(0xFF3E8AFF),
+                                        size: 18,
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${(progress * 100).toStringAsFixed(0)}%',
-                                        style: const TextStyle(
-                                          color: Color(0xFF64748B),
-                                          fontSize: 12,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Gợi ý: ${_formatCurrency(suggestion)} / tuần',
+                                          style: const TextStyle(
+                                            color: Color(0xFF3E8AFF),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              // Progress bar background
-                              Container(
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF3F4F6),
-                                  borderRadius: BorderRadius.circular(999),
                                 ),
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    return Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Container(
-                                        width: constraints.maxWidth * progress,
-                                        decoration: const BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Color(0xFF3E8AFF),
-                                              Color(0xFF325DFF),
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(999),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEFF6FF),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.trending_up,
-                                      color: Color(0xFF3E8AFF),
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'Gợi ý: ${_formatCurrency(suggestion)} / tuần',
-                                        style: const TextStyle(
-                                          color: Color(0xFF3E8AFF),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },
