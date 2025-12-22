@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:finpal/domain/models/saving_goal.dart';
+import 'package:finpal/ui/screens/confirm_saving_screen.dart';
 
 class SavingGoalDetailScreen extends StatefulWidget {
   final SavingGoal goal;
@@ -620,7 +621,14 @@ class _SavingGoalDetailScreenState extends State<SavingGoalDetailScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
-                onTap: _showSavingConfirmDialog,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ConfirmSavingScreen(goal: widget.goal),
+                    ),
+                  );
+                },
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
