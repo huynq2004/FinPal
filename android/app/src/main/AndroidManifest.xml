@@ -2,8 +2,7 @@
     <!-- SMS Permissions -->
     <uses-permission android:name="android.permission.READ_SMS" />
 
-    
-    
+    <application
         android:label="finpal"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
