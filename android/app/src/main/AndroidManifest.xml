@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- SMS Permissions -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+
     <application
         android:label="finpal"
         android:name="${applicationName}"
