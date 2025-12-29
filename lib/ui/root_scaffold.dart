@@ -13,14 +13,18 @@ class RootScaffold extends StatefulWidget {
 
 class _RootScaffoldState extends State<RootScaffold> {
   int _index = 0;
+  late final List<Widget> _pages;
 
-  // 4 tab theo yêu cầu S1-C5
-  final List<Widget> _pages = const [
-    DashboardScreen(),
-    SmartScanScreen(),
-    SavingJarScreen(),
-    AiCoachScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      const DashboardScreen(),
+      const SmartScanScreen(),
+      const SavingJarScreen(),
+      const AiCoachScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +61,6 @@ class _RootScaffoldState extends State<RootScaffold> {
   }
 }
 
-
 class SmartScanScreen extends StatelessWidget {
   const SmartScanScreen({super.key});
 
@@ -65,9 +68,7 @@ class SmartScanScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Smart Scan')),
-      body: const Center(
-        child: Text('Smart Scan sẽ làm ở sprint sau.'),
-      ),
+      body: const Center(child: Text('Smart Scan sẽ làm ở sprint sau.')),
     );
   }
 }
