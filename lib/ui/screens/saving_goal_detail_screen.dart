@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:finpal/domain/models/saving_goal.dart';
+import 'package:finpal/ui/screens/edit_saving_goal_screen.dart';
 import 'package:finpal/ui/screens/confirm_saving_screen.dart';
 
 class SavingGoalDetailScreen extends StatefulWidget {
@@ -429,14 +430,22 @@ class _SavingGoalDetailScreenState extends State<SavingGoalDetailScreen> {
                 ),
               ),
             ],
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'edit') {
-                // TODO: Navigate to edit screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Chức năng chỉnh sửa sẽ được cập nhật'),
+                final updated = await Navigator.push<SavingGoal?>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EditSavingGoalScreen(goal: widget.goal),
                   ),
                 );
+                if (updated != null && mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SavingGoalDetailScreen(goal: updated),
+                    ),
+                  );
+                }
               } else if (value == 'delete') {
                 // TODO: Confirm delete
                 ScaffoldMessenger.of(context).showSnackBar(

@@ -27,7 +27,7 @@ class SavingsGoalsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) {
+      create: (q_) {
         final vm = SavingsGoalsViewModel(SavingGoalRepository());
         vm.loadGoals(); // ✅ load qua repository
         return vm;
