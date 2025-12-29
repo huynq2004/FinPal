@@ -45,13 +45,25 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
     'Tiền mặt',
   ];
 
-  @override
-  void dispose() {
-    _amountController.dispose();
-    _descriptionController.dispose();
-    _noteController.dispose();
-    super.dispose();
-  }
+	@override
+	void dispose() {
+		_amountController.dispose();
+		_descriptionController.dispose();
+		_noteController.dispose();
+		super.dispose();
+	}
+
+	@override
+	void initState() {
+		super.initState();
+		// Load categories from DB via ViewModel after widget is initialized
+		Future.microtask(() {
+			try {
+				final vm = context.read<ManualTransactionViewModel>();
+				vm.loadCategories();
+			} catch (_) {}
+		});
+	}
 
   Future<void> _pickDate(
     BuildContext context,
