@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'screens/dashboard_screen.dart';
+import 'screens/smart_scan_permission_screen.dart';
 
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
@@ -11,14 +12,20 @@ class RootScaffold extends StatefulWidget {
 
 class _RootScaffoldState extends State<RootScaffold> {
   int _index = 0;
+  late final List<Widget> _pages;
 
-  // 4 tab theo yêu cầu S1-C5
-  final List<Widget> _pages = const [
-    DashboardScreen(),
-    SmartScanScreen(),
-    SavingJarScreen(),
-    AiCoachScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      const DashboardScreen(),
+      SmartScanPermissionScreen(
+        onNavigateToDashboard: () => setState(() => _index = 0),
+      ),
+      const SavingJarScreen(),
+      const AiCoachScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

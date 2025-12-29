@@ -38,6 +38,9 @@ dependencies:
   intl: ^0.18.1
   sqflite: ^2.2.8+1
   path: ^1.8.3
+  another_telephony: ^0.4.1
+  permission_handler: ^11.3.1
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
