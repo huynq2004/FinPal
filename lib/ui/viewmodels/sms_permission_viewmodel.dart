@@ -79,18 +79,18 @@ class SmsPermissionViewModel extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Check real system status to avoid stale cached values
-      final PermissionStatus realStatus = await Permission.sms.status;
+       // Check REAL permission status from system, don't trigger dialog
+      PermissionStatus realStatus = await Permission.sms.status;
       _isPermissionGranted = realStatus.isGranted;
       _permissionStatus = _isPermissionGranted ? 'Đã cấp quyền' : 'Chưa cấp quyền';
 
-      // Persist the real status so UI can read a cached value quickly
+      // Optionally keep SharedPreferences in sync with real status
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_keyIsPermissionGranted, _isPermissionGranted);
 
       if (kDebugMode) {
-        print('🔍 Permission Status Check (real):');
-        print('   - Real Status: $realStatus');
+        print('🔍 Permission Status Check:');
+        print('   - Real System Status: $realStatus');
         print('   - Granted: $_isPermissionGranted');
         print('   - Status: $_permissionStatus');
       }

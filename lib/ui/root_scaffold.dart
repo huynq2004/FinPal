@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/dashboard_screen.dart';
 import 'screens/smart_scan_permission_screen.dart';
+import 'screens/smart_scan_screen.dart';
 
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
@@ -19,9 +20,7 @@ class _RootScaffoldState extends State<RootScaffold> {
     super.initState();
     _pages = [
       const DashboardScreen(),
-      SmartScanPermissionScreen(
-        onNavigateToDashboard: () => setState(() => _index = 0),
-      ),
+      const SmartScanScreen(),
       const SavingJarScreen(),
       const AiCoachScreen(),
     ];
@@ -57,21 +56,6 @@ class _RootScaffoldState extends State<RootScaffold> {
             label: 'Trợ lý AI',
           ),
         ],
-      ),
-    );
-  }
-}
-
-
-class SmartScanScreen extends StatelessWidget {
-  const SmartScanScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Smart Scan')),
-      body: const Center(
-        child: Text('Smart Scan sẽ làm ở sprint sau.'),
       ),
     );
   }
