@@ -6,6 +6,7 @@ import 'screens/ai_coach_screen.dart';
 import 'screens/savings_goals_screen.dart';
 import 'screens/smart_scan_screen.dart';
 import 'screens/smart_scan_permission_screen.dart';
+import 'widgets/finpal_bottom_nav.dart';
 
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
@@ -74,32 +75,9 @@ class _RootScaffoldState extends State<RootScaffold> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _getPageAtIndex(_index),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: FinPalBottomNav(
         currentIndex: _index,
         onTap: _handleTabChange,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Tổng quan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner_outlined),
-            activeIcon: Icon(Icons.qr_code_scanner),
-            label: 'Smart Scan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.savings_outlined),
-            activeIcon: Icon(Icons.savings),
-            label: 'Hũ tiết kiệm',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.psychology_outlined),
-            activeIcon: Icon(Icons.psychology),
-            label: 'Trợ lý AI',
-          ),
-        ],
       ),
     );
   }
