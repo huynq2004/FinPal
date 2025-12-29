@@ -41,4 +41,9 @@ class SavingGoalRepository {
       ),
     ];
   }
+
+  Future<int> deleteGoal(int id) async {
+    final db = await _dbProvider.database;
+    return db.delete('saving_goals', where: 'id = ?', whereArgs: [id]);
+  }
 }

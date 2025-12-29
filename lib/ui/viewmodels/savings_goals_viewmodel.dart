@@ -66,4 +66,18 @@ class SavingsGoalsViewModel extends ChangeNotifier {
     _goals = _goals.map((g) => g.id == updated.id ? updated : g).toList();
     notifyListeners();
   }
+
+  /// Xoá một mục tiêu theo `id`.
+  Future<void> deleteGoal(int id) async {
+    // Best-effort xóa dưới DB thật (nếu đang dùng DB)
+    try {
+      await _repository.deleteGoal(id);
+    } catch (_) {
+      // Sprint 1: có thể chưa dùng DB, bỏ qua lỗi.
+    }
+
+    // Xoá trên bộ nhớ
+    _goals = _goals.where((g) => g.id != id).toList();
+    notifyListeners();
+  }
 }

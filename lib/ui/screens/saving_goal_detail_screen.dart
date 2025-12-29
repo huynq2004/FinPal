@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:finpal/domain/models/saving_goal.dart';
 import 'package:finpal/ui/screens/edit_saving_goal_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:finpal/ui/viewmodels/savings_goals_viewmodel.dart';
+import 'package:finpal/ui/screens/delete_saving_goal_screen.dart';
 import 'package:finpal/ui/screens/confirm_saving_screen.dart';
 
 class SavingGoalDetailScreen extends StatefulWidget {
@@ -447,12 +450,20 @@ class _SavingGoalDetailScreenState extends State<SavingGoalDetailScreen> {
                   );
                 }
               } else if (value == 'delete') {
-                // TODO: Confirm delete
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Chức năng xóa sẽ được cập nhật'),
+                final vm = context.read<SavingsGoalsViewModel>();
+                final confirmed = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: vm,
+                      child: DeleteSavingGoalScreen(goal: widget.goal),
+                    ),
                   ),
                 );
+                if (confirmed == true && mounted) {
+                  // Pop this detail screen and notify list via result
+                  Navigator.of(context).pop(true);
+                }
               }
             },
           ),

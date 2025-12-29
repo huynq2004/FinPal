@@ -166,14 +166,25 @@ class SavingsGoalsScreen extends StatelessWidget {
                         final suggestion = vm.suggestionFor(goal);
 
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            final vm = context.read<SavingsGoalsViewModel>();
+                            final deleted = await Navigator.push<bool>(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    SavingGoalDetailScreen(goal: goal),
+                                builder: (_) => ChangeNotifierProvider.value(
+                                  value: vm,
+                                  child: SavingGoalDetailScreen(goal: goal),
+                                ),
                               ),
                             );
+                            if (deleted == true && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Đã xóa mục tiêu.'),
+                                  backgroundColor: Color(0xFFFF5A5F),
+                                ),
+                              );
+                            }
                           },
                           child: Container(
                             decoration: BoxDecoration(
