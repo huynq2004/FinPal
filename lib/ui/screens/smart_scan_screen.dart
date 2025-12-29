@@ -123,7 +123,7 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Animated scanning indicator
+              // Animated outer ring
               if (_isScanning)
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0, end: 1),
@@ -154,11 +154,14 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
                   ),
                 ),
               
-              // Center headphones icon (scanning icon)
-              Icon(
-                Icons.headphones,
-                color: Colors.white,
-                size: 48,
+              // Center loading circle
+              SizedBox(
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(
+                  strokeWidth: 4,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
               ),
             ],
           ),

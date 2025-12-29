@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:finpal/data/db/database_provider.dart';
+import 'package:finpal/data/repositories/transaction_repository.dart';
+import 'package:finpal/domain/models/transaction.dart' as domain;
 
 class TransactionData {
   final String bankName;
@@ -38,6 +41,46 @@ class SmartScanResultsScreen extends StatefulWidget {
 class _SmartScanResultsScreenState extends State<SmartScanResultsScreen> {
   late List<TransactionData> transactions;
   late List<bool> selectedTransactions;
+
+  Future<void> _saveSelectedTransactions() async {
+    try {
+      final repo = TransactionRepository(DatabaseProvider.instance);
+      final now = DateTime.now();
+
+      for (int i = 0; i < transactions.length; i++) {
+        if (!selectedTransactions[i]) continue;
+        final t = transactions[i];
+
+        final isExpense = t.amount.trim().startsWith('-');
+        final cleanAmountStr = t.amount.replaceAll(RegExp(r'[^0-9]'), '');
+        final parsedAmount = int.tryParse(cleanAmountStr) ?? 0;
+        final amount = isExpense ? -parsedAmount : parsedAmount;
+
+        // TODO: map tx.category -> categoryId nếu có danh mục trong DB
+        final tx = domain.Transaction(
+          id: null,
+          amount: amount,
+          type: isExpense ? 'expense' : 'income',
+          categoryId: null,
+          categoryName: t.category,
+          bank: t.bankCode,
+          createdAt: now,
+          note: t.description,
+          source: 'sms',
+        );
+
+        await repo.insertTransaction(tx);
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi lưu giao dịch: $e')),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -141,7 +184,7 @@ class _SmartScanResultsScreenState extends State<SmartScanResultsScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: selectedCount > 0 ? () {} : null,
+                  onPressed: selectedCount > 0 ? _saveSelectedTransactions : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E8AFF),
                     disabledBackgroundColor: Colors.grey.shade300,

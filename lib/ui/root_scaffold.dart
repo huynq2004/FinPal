@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'screens/dashboard_screen.dart';
 import 'screens/ai_coach_screen.dart';
 import 'screens/savings_goals_screen.dart';
+import 'screens/smart_scan_screen.dart';
+import 'screens/smart_scan_permission_screen.dart';
 
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
@@ -13,26 +16,67 @@ class RootScaffold extends StatefulWidget {
 
 class _RootScaffoldState extends State<RootScaffold> {
   int _index = 0;
-  late final List<Widget> _pages;
+  bool _hasSmsPermission = false;
 
   @override
   void initState() {
     super.initState();
-    _pages = [
-      const DashboardScreen(),
-      const SmartScanScreen(),
-      const SavingJarScreen(),
-      const AiCoachScreen(),
-    ];
+    _checkSmsPermission();
+  }
+
+  Future<void> _checkSmsPermission() async {
+    final status = await Permission.sms.status;
+    setState(() {
+      _hasSmsPermission = status.isGranted;
+    });
+  }
+
+  void _handleTabChange(int newIndex) async {
+    // Always refresh SMS permission when switching to Smart Scan tab
+    if (newIndex == 1) {
+      await _checkSmsPermission();
+    }
+    setState(() => _index = newIndex);
+  }
+
+  Widget _getPageAtIndex(int index) {
+    switch (index) {
+      case 0:
+        return const DashboardScreen();
+      case 1:
+        // Show permission screen if no SMS permission, otherwise show Smart Scan
+        return _hasSmsPermission 
+            ? const SmartScanScreen()
+            : SmartScanPermissionScreen(
+                onNavigateToDashboard: () async {
+                  // Re-check permission before navigating back
+                  await _checkSmsPermission();
+                  
+                  if (_hasSmsPermission) {
+                    // Permission granted, stay on Smart Scan tab to show scan screen
+                    setState(() {});
+                  } else {
+                    // Permission not granted, go back to Dashboard
+                    setState(() => _index = 0);
+                  }
+                },
+              );
+      case 2:
+        return const SavingsGoalsScreen();
+      case 3:
+        return const AiCoachScreen();
+      default:
+        return const DashboardScreen();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_index],
+      body: _getPageAtIndex(_index),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: _handleTabChange,
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
@@ -61,26 +105,4 @@ class _RootScaffoldState extends State<RootScaffold> {
   }
 }
 
-class SmartScanScreen extends StatelessWidget {
-  const SmartScanScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Smart Scan')),
-      body: const Center(child: Text('Smart Scan sẽ làm ở sprint sau.')),
-    );
-  }
-}
-
-class SavingJarScreen extends StatelessWidget {
-  const SavingJarScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Hũ tiết kiệm')),
-      body: const Center(child: Text('Hũ tiết kiệm sẽ làm ở sprint sau.')),
-    );
-  }
-}

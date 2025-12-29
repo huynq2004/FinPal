@@ -267,6 +267,8 @@ class SmartScanPermissionScreen extends StatelessWidget {
                             duration: Duration(seconds: 2),
                           ),
                         );
+                        // Call callback to refresh parent state
+                        onNavigateToDashboard?.call();
                       }
                     },
               style: ElevatedButton.styleFrom(

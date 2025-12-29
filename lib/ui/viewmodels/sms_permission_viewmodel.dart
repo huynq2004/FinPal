@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,15 +42,15 @@ class SmsPermissionViewModel extends ChangeNotifier {
       notifyListeners();
       
       if (kDebugMode) {
-        print('📱 SMS Permission State Loaded:');
-        print('   - Has Requested: $_hasRequestedPermission');
-        print('   - Real System Status: $realStatus');
-        print('   - Is Granted: $_isPermissionGranted');
-        print('   - Status: $_permissionStatus');
+        debugPrint('📱 SMS Permission State Loaded:');
+        debugPrint('   - Has Requested: $_hasRequestedPermission');
+        debugPrint('   - Real System Status: $realStatus');
+        debugPrint('   - Is Granted: $_isPermissionGranted');
+        debugPrint('   - Status: $_permissionStatus');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error loading permission state: $e');
+        debugPrint('❌ Error loading permission state: $e');
       }
     }
   }
@@ -62,13 +63,13 @@ class SmsPermissionViewModel extends ChangeNotifier {
       await prefs.setBool(_keyIsPermissionGranted, _isPermissionGranted);
       
       if (kDebugMode) {
-        print('💾 SMS Permission State Saved:');
-        print('   - Has Requested: $_hasRequestedPermission');
-        print('   - Is Granted: $_isPermissionGranted');
+        debugPrint('💾 SMS Permission State Saved:');
+        debugPrint('   - Has Requested: $_hasRequestedPermission');
+        debugPrint('   - Is Granted: $_isPermissionGranted');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error saving permission state: $e');
+        debugPrint('❌ Error saving permission state: $e');
       }
     }
   }
@@ -89,15 +90,15 @@ class SmsPermissionViewModel extends ChangeNotifier {
       await prefs.setBool(_keyIsPermissionGranted, _isPermissionGranted);
 
       if (kDebugMode) {
-        print('🔍 Permission Status Check:');
-        print('   - Real System Status: $realStatus');
-        print('   - Granted: $_isPermissionGranted');
-        print('   - Status: $_permissionStatus');
+        debugPrint('🔍 Permission Status Check:');
+        debugPrint('   - Real System Status: $realStatus');
+        debugPrint('   - Granted: $_isPermissionGranted');
+        debugPrint('   - Status: $_permissionStatus');
       }
     } catch (e) {
       _permissionStatus = 'Lỗi kiểm tra quyền';
       if (kDebugMode) {
-        print('❌ Error checking permission status: $e');
+        debugPrint('❌ Error checking permission status: $e');
       }
     } finally {
       _isLoading = false;
@@ -112,7 +113,7 @@ class SmsPermissionViewModel extends ChangeNotifier {
       notifyListeners();
 
       if (kDebugMode) {
-        print('📲 Requesting SMS permissions from system...');
+        debugPrint('📲 Requesting SMS permissions from system...');
       }
 
       // Check current status first
@@ -124,7 +125,7 @@ class SmsPermissionViewModel extends ChangeNotifier {
         notifyListeners();
         
         if (kDebugMode) {
-          print('⚠️ Permission permanently denied - Opening settings');
+          debugPrint('⚠️ Permission permanently denied - Opening settings');
         }
         
         // Open app settings so user can enable permission manually
@@ -154,16 +155,16 @@ class SmsPermissionViewModel extends ChangeNotifier {
       await _savePermissionState();
 
       if (kDebugMode) {
-        print('✅ SMS Permission Request Result:');
-        print('   - Status: $status');
-        print('   - Granted: $_isPermissionGranted');
-        print('   - Permission Status: $_permissionStatus');
-        print('   - Saved to SharedPreferences');
+        debugPrint('✅ SMS Permission Request Result:');
+        debugPrint('   - Status: $status');
+        debugPrint('   - Granted: $_isPermissionGranted');
+        debugPrint('   - Permission Status: $_permissionStatus');
+        debugPrint('   - Saved to SharedPreferences');
       }
     } catch (e) {
       _permissionStatus = 'Lỗi yêu cầu quyền';
       if (kDebugMode) {
-        print('❌ Error requesting SMS permission: $e');
+        debugPrint('❌ Error requesting SMS permission: $e');
       }
     } finally {
       _isLoading = false;
@@ -185,11 +186,11 @@ class SmsPermissionViewModel extends ChangeNotifier {
       notifyListeners();
       
       if (kDebugMode) {
-        print('🔄 Permission state reset');
+        debugPrint('🔄 Permission state reset');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error resetting permission state: $e');
+        debugPrint('❌ Error resetting permission state: $e');
       }
     }
   }

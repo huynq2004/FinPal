@@ -18,10 +18,16 @@ class DatabaseProvider {
     final path = join(dbPath, 'finpal.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await createTables(db);
         await seedCategories(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          // Ensure unique constraint/index for categories to avoid duplicates
+          await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_name_type ON categories(name, type)');
+        }
       },
     );
   }
@@ -51,7 +57,8 @@ class DatabaseProvider {
         name TEXT NOT NULL,
         type TEXT NOT NULL,
         icon TEXT,
-        color TEXT
+        color TEXT,
+        UNIQUE(name, type)
       )
     ''');
 
@@ -117,7 +124,7 @@ class DatabaseProvider {
     ];
 
     for (final category in defaultCategories) {
-      await db.insert('categories', category);
+      await db.insert('categories', category, conflictAlgorithm: ConflictAlgorithm.ignore);
     }
   }
 }
