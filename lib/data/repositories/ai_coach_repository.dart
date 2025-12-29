@@ -2,19 +2,33 @@ import 'package:finpal/domain/models/coach_message.dart';
 
 class AiCoachRepository {
   Future<List<CoachMessage>> getFakeMessages() async {
-    return [
-      const CoachMessage(
+    return const [
+      CoachMessage(
         id: '1',
-        title: 'Hạn mức ăn ngoài sắp vượt',
+        title: 'Chi ăn ngoài gần chạm hạn mức!',
         description:
-            'Bạn đã sử dụng 75% hạn mức ăn ngoài trong khi mới đi qua 50% tháng.',
+            'Bạn đã chi 70% hạn mức "Ăn ngoài" của tháng này. Còn 10 ngày nữa là hết tháng.',
         type: CoachMessageType.warning,
       ),
-      const CoachMessage(
+      CoachMessage(
         id: '2',
-        title: 'Gợi ý tiết kiệm',
+        title: 'Giảm trà sữa để tiết kiệm nhiều hơn',
         description:
-            'Nếu giảm chi tiêu trà sữa xuống 100.000đ/tuần, bạn sẽ tiết kiệm được 400.000đ/tháng.',
+            'FinPal nhận thấy bạn chi trung bình 200.000₫ cho "Trà sữa" mỗi tuần. Nếu giảm còn 100.000₫, bạn có thể tiết kiệm 400.000₫ mỗi tháng.',
+        type: CoachMessageType.suggestion,
+      ),
+      CoachMessage(
+        id: '3',
+        title: 'Tiền điện tháng này cao bất thường',
+        description:
+            'Hóa đơn tiền điện tháng này của bạn: 500.000₫. Cao hơn 30% so với mức trung bình 350.000₫.',
+        type: CoachMessageType.warning,
+      ),
+      CoachMessage(
+        id: '4',
+        title: 'Tạo mục tiêu tiết kiệm mới',
+        description:
+            'Bạn đang có khoảng dư 4.300.000₫ tháng này. Hãy tạo mục tiêu tiết kiệm để đạt được ước mơ của bạn!',
         type: CoachMessageType.suggestion,
       ),
     ];

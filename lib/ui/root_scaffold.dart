@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'screens/dashboard_screen.dart';
-import 'screens/smart_scan_screen.dart';
+import 'screens/ai_coach_screen.dart';
+import 'screens/savings_goals_screen.dart';
 
 class RootScaffold extends StatefulWidget {
   const RootScaffold({super.key});
@@ -12,18 +13,14 @@ class RootScaffold extends StatefulWidget {
 
 class _RootScaffoldState extends State<RootScaffold> {
   int _index = 0;
-  late final List<Widget> _pages;
 
-  @override
-  void initState() {
-    super.initState();
-    _pages = [
-      const DashboardScreen(),
-      const SmartScanScreen(),
-      const SavingJarScreen(),
-      const AiCoachScreen(),
-    ];
-  }
+  // 4 tab theo yêu cầu S1-C5
+  final List<Widget> _pages = const [
+    DashboardScreen(),
+    SmartScanScreen(),
+    SavingJarScreen(),
+    AiCoachScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +57,21 @@ class _RootScaffoldState extends State<RootScaffold> {
   }
 }
 
+
+class SmartScanScreen extends StatelessWidget {
+  const SmartScanScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Smart Scan')),
+      body: const Center(
+        child: Text('Smart Scan sẽ làm ở sprint sau.'),
+      ),
+    );
+  }
+}
+
 class SavingJarScreen extends StatelessWidget {
   const SavingJarScreen({super.key});
 
@@ -67,23 +79,7 @@ class SavingJarScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Hũ tiết kiệm')),
-      body: const Center(
-        child: Text('Hũ tiết kiệm sẽ làm ở sprint sau.'),
-      ),
-    );
-  }
-}
-
-class AiCoachScreen extends StatelessWidget {
-  const AiCoachScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Trợ lý AI')),
-      body: const Center(
-        child: Text('Trợ lý AI sẽ làm ở sprint sau.'),
-      ),
+      body: const Center(child: Text('Hũ tiết kiệm sẽ làm ở sprint sau.')),
     );
   }
 }
