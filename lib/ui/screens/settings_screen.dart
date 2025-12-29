@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'sms_permission_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,6 +32,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             value: _autoSms,
             onChanged: (v) => setState(() => _autoSms = v),
+          ),
+          
+          ListTile(
+            leading: const Icon(Icons.security),
+            title: const Text('Quản lý quyền SMS'),
+            subtitle: const Text('Cấp hoặc kiểm tra quyền đọc SMS'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SmsPermissionScreen(),
+                ),
+              );
+            },
           ),
 
           const Divider(height: 24),
