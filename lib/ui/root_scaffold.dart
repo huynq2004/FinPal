@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'screens/dashboard_screen.dart';
-import 'screens/smart_scan_permission_screen.dart';
 import 'screens/smart_scan_screen.dart';
 
 class RootScaffold extends StatefulWidget {

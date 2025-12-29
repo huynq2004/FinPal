@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'smart_scan_results_screen.dart';
 
 class SmartScanScreen extends StatefulWidget {
   const SmartScanScreen({super.key});
@@ -66,7 +67,11 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to results screen
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SmartScanResultsScreen(),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E8AFF),
