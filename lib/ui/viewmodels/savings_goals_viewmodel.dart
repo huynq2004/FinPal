@@ -24,6 +24,20 @@ class SavingsGoalsViewModel extends ChangeNotifier {
     return 200000;
   }
 
+  /// Tính gợi ý tiết kiệm hàng tuần dựa trên mục tiêu còn lại và deadline
+  int calculateSuggestedWeekly(SavingGoal goal) {
+    final needed = goal.targetAmount - goal.currentSaved;
+    if (needed <= 0) return 0;
+
+    final now = DateTime.now();
+    final daysRemaining = goal.deadline.difference(now).inDays;
+    if (daysRemaining <= 0)
+      return needed; // Deadline đã hết, phải tiết kiệm hết ngay
+
+    final weeksRemaining = (daysRemaining / 7).ceil().clamp(1, 999999);
+    return (needed / weeksRemaining).ceil();
+  }
+
   Future<void> loadGoals() async {
     // ✅ Load from real database
     _goals = await _repository.getAllGoals();

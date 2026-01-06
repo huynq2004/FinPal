@@ -163,7 +163,7 @@ class SavingsGoalsScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final SavingGoal goal = vm.goals[index];
                         final progress = vm.progressOf(goal).clamp(0.0, 1.0);
-                        final suggestion = vm.suggestionFor(goal);
+                        final suggestion = vm.calculateSuggestedWeekly(goal);
 
                         return GestureDetector(
                           onTap: () async {
