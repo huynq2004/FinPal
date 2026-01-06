@@ -1,5 +1,3 @@
-import 'package:finpal/ui/screens/transaction_detail_screen.dart';
-import 'package:finpal/ui/widgets/transaction_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -207,30 +205,6 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
             MaterialPageRoute(builder: (_) => const ManualTransactionScreen()),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ManualTransactionScreen()),
-          );
-        },
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF3E8AFF), Color(0xFF325DFF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 8, offset: const Offset(0, 4))],
-          ),
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
       ),
     );
   }
