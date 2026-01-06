@@ -25,26 +25,21 @@ class SavingsGoalsViewModel extends ChangeNotifier {
   }
 
   Future<void> loadGoals() async {
-    // ✅ Sprint 1: fake data qua repository
-    _goals = await _repository.getFakeGoals();
+    // ✅ Load from real database
+    _goals = await _repository.getAllGoals();
     notifyListeners();
   }
 
-  /// Tạo mới một mục tiêu tiết kiệm (tạm thời chỉ lưu trên RAM cho Sprint 1).
-  ///
-  /// Trong các sprint sau có thể gọi xuống [_repository] để lưu xuống DB thật.
-  void addGoal({
+  /// Tạo mới một mục tiêu tiết kiệm và lưu vào database
+  Future<void> addGoal({
     required String name,
     required int targetAmount,
     int initialSaved = 0,
     DateTime? deadline,
     DateTime? createdAt,
-  }) {
-    // Tạo id tạm thời dựa trên length hiện tại.
-    final newId = (_goals.isEmpty ? 0 : _goals.last.id ?? 0) + 1;
-
+  }) async {
     final goal = SavingGoal(
-      id: newId,
+      id: null, // Database sẽ tự tạo ID
       name: name,
       targetAmount: targetAmount,
       currentSaved: initialSaved,
@@ -52,32 +47,65 @@ class SavingsGoalsViewModel extends ChangeNotifier {
       deadline: deadline ?? DateTime.now().add(const Duration(days: 90)),
     );
 
-    _goals = [..._goals, goal];
-    notifyListeners();
+    // Lưu vào database
+    final goalId = await _repository.createGoal(goal);
+
+    // Lấy lại goal với ID mới
+    final createdGoal = await _repository.getGoalById(goalId);
+
+    if (createdGoal != null) {
+      _goals = [..._goals, createdGoal];
+      notifyListeners();
+    }
   }
 
   double progressOf(SavingGoal goal) {
     return goal.currentSaved / goal.targetAmount;
   }
 
-  /// Cập nhật một mục tiêu hiện có theo `id`.
-  void updateGoal(SavingGoal updated) {
+  /// Cập nhật một mục tiêu hiện có theo `id` và lưu vào database
+  Future<void> updateGoal(SavingGoal updated) async {
     if (updated.id == null) return;
+
+    // Cập nhật database
+    await _repository.updateGoal(updated);
+
+    // Cập nhật local state
     _goals = _goals.map((g) => g.id == updated.id ? updated : g).toList();
     notifyListeners();
   }
 
-  /// Xoá một mục tiêu theo `id`.
+  /// Xoá một mục tiêu theo `id` và xóa khỏi database
   Future<void> deleteGoal(int id) async {
-    // Best-effort xóa dưới DB thật (nếu đang dùng DB)
-    try {
-      await _repository.deleteGoal(id);
-    } catch (_) {
-      // Sprint 1: có thể chưa dùng DB, bỏ qua lỗi.
-    }
+    // Xóa khỏi database
+    await _repository.deleteGoal(id);
 
-    // Xoá trên bộ nhớ
+    // Xoá trên bộ nhớ local
     _goals = _goals.where((g) => g.id != id).toList();
     notifyListeners();
+  }
+
+  /// Thêm tiền vào hũ tiết kiệm
+  Future<void> addSavings(int goalId, int amount) async {
+    await _repository.addSavingsToGoal(goalId, amount);
+
+    // Reload goal để cập nhật currentSaved
+    final updatedGoal = await _repository.getGoalById(goalId);
+    if (updatedGoal != null) {
+      _goals = _goals.map((g) => g.id == goalId ? updatedGoal : g).toList();
+      notifyListeners();
+    }
+  }
+
+  /// Rút tiền từ hũ tiết kiệm
+  Future<void> withdrawSavings(int goalId, int amount, {String? note}) async {
+    await _repository.withdrawFromGoal(goalId, amount, note: note);
+
+    // Reload goal để cập nhật currentSaved
+    final updatedGoal = await _repository.getGoalById(goalId);
+    if (updatedGoal != null) {
+      _goals = _goals.map((g) => g.id == goalId ? updatedGoal : g).toList();
+      notifyListeners();
+    }
   }
 }

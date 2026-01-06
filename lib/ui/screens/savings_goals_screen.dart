@@ -341,13 +341,23 @@ class SavingsGoalsScreen extends StatelessWidget {
     );
 
     if (result != null && context.mounted) {
-      context.read<SavingsGoalsViewModel>().addGoal(
+      // Save to database via viewmodel
+      await context.read<SavingsGoalsViewModel>().addGoal(
         name: result.name,
         targetAmount: result.targetAmount,
         initialSaved: result.currentSaved,
         deadline: result.deadline,
         createdAt: result.createdAt,
       );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Đã tạo mục tiêu mới!'),
+            backgroundColor: Color(0xFF2ECC71),
+          ),
+        );
+      }
     }
   }
 }

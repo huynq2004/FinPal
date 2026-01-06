@@ -26,7 +26,22 @@ class DatabaseProvider {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           // Ensure unique constraint/index for categories to avoid duplicates
-          await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_name_type ON categories(name, type)');
+          await db.execute(
+            'CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_name_type ON categories(name, type)',
+          );
+
+          // Create saving_history table (added in version 2)
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS saving_history (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              goal_id INTEGER NOT NULL,
+              amount INTEGER NOT NULL,
+              type TEXT NOT NULL,
+              note TEXT,
+              created_at TEXT NOT NULL,
+              FOREIGN KEY (goal_id) REFERENCES saving_goals (id) ON DELETE CASCADE
+            )
+          ''');
         }
       },
     );
@@ -84,6 +99,19 @@ class DatabaseProvider {
         created_at TEXT NOT NULL
       )
     ''');
+
+    // Saving History (tracking khi thêm/rút tiền từ hũ)
+    await db.execute('''
+      CREATE TABLE saving_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        goal_id INTEGER NOT NULL,
+        amount INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (goal_id) REFERENCES saving_goals (id) ON DELETE CASCADE
+      )
+    ''');
   }
 
   // =========================
@@ -124,7 +152,11 @@ class DatabaseProvider {
     ];
 
     for (final category in defaultCategories) {
-      await db.insert('categories', category, conflictAlgorithm: ConflictAlgorithm.ignore);
+      await db.insert(
+        'categories',
+        category,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
     }
   }
 }
