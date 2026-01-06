@@ -1,22 +1,61 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../domain/models/category_stat.dart';
 
 class PieChart extends StatelessWidget {
-  final List data;
+  final List<CategoryStat> data;
   final double size;
 
-  const PieChart({super.key, required this.data, required this.size});
+  const PieChart({
+    super.key,
+    required this.data,
+    this.size = 160,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Minimal placeholder - real implementation should render a chart
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        shape: BoxShape.circle,
+      child: CustomPaint(
+        painter: _PiePainter(data),
       ),
-      child: Center(child: Text('${data.length}')),
     );
   }
+}
+
+class _PiePainter extends CustomPainter {
+  final List<CategoryStat> data;
+
+  _PiePainter(this.data);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+
+    double startRadian = -pi / 2; // bắt đầu từ đỉnh trên
+
+    for (final item in data) {
+      final sweepRadian = item.percent * 2 * pi;
+      paint.color = item.color;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startRadian,
+        sweepRadian,
+        true, // true => hình quạt (kín)
+        paint,
+      );
+
+      startRadian += sweepRadian;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

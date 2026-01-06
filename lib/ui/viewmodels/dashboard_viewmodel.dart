@@ -25,36 +25,40 @@ class DashboardViewModel extends ChangeNotifier {
     totalExpense = 2000000;
     // Fake recent transactions (preview on dashboard)
     _recent
-      ..clear()
-      ..addAll([
-        Transaction(
-          id: 3,
-          amount: 5000000,
-          type: 'income',
-          categoryName: 'Thu nhập',
-          bank: 'ACB',
-          createdAt: DateTime.now().subtract(const Duration(days: 3)),
-          note: 'Salary',
-        ),
-        Transaction(
-          id: 2,
-          amount: 120000,
-          type: 'expense',
-          categoryName: 'Ăn uống',
-          bank: 'TCB',
-          createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 3)),
-          note: 'THE COFFEE HOUSE',
-        ),
-        Transaction(
-          id: 1,
-          amount: 55000,
-          type: 'expense',
-          categoryName: 'Di chuyển',
-          bank: 'VCB',
-          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-          note: 'GRAB',
-        ),
-      ]);
+    ..clear()
+    ..addAll([
+      Transaction(
+        id: 3,
+        amount: 5000000,
+        type: 'income',
+        categoryName: 'Thu nhập',
+        bank: 'ACB',
+        createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        note: 'Salary',
+        source: 'manual',
+      ),
+      Transaction(
+        id: 2,
+        amount: 120000,
+        type: 'expense',
+        categoryName: 'Ăn uống',
+        bank: 'TCB',
+        createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 3)),
+        note: 'THE COFFEE HOUSE',
+        source: 'manual',
+      ),
+      Transaction(
+        id: 1,
+        amount: 55000,
+        type: 'expense',
+        categoryName: 'Di chuyển',
+        bank: 'VCB',
+        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+        note: 'GRAB',
+        source: 'manual',
+      ),
+    ]);
+
 
     // Fake category stats for pie chart
     _categories = [

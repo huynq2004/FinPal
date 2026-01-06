@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 
 class CategoryStat {
   final String name;
-  final double percent;
-  final int amount;
   final Color color;
+  final double percent; // 0..1
+  final int amount; // VND
 
-  CategoryStat({required this.name, required this.percent, required this.amount, required this.color});
+  const CategoryStat({
+    required this.name,
+    required this.color,
+    required this.percent,
+    required this.amount,
+  });
 }

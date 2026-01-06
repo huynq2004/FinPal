@@ -29,7 +29,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final fmt = NumberFormat.decimalPattern('vi');
-    final dateFmt = DateFormat('dd/MM, HH:mm');
     String money(int v) => '${fmt.format(v)}đ';
 
     return Scaffold(
@@ -263,14 +262,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
-
       /// ================= FAB =================
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ManualTransactionScreen()),
           );
+
+          // If a new transaction was saved, refresh the summary
+          if (result == true && mounted) {
+            final now = DateTime.now();
+            context.read<DashboardViewModel>().loadSummary(now.year, now.month);
+          }
         },
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -292,8 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// ================= COMPONENTS =================
-
+  
   Widget _summaryRow(String label, String value, Color color) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -303,8 +306,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               width: 8,
               height: 8,
-              decoration:
-                  BoxDecoration(color: color, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 8),
             Text(
