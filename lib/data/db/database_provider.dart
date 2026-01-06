@@ -18,21 +18,27 @@ class DatabaseProvider {
     final path = join(dbPath, 'finpal.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await createTables(db);
         await seedCategories(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
+        // Migrate từ version 1 → 2
         if (oldVersion < 2) {
-          // Ensure unique constraint/index for categories to avoid duplicates
           await db.execute(
             'CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_name_type ON categories(name, type)',
           );
+        }
 
-          // Create saving_history table (added in version 2)
+        // Migrate từ version 2 → 3 (hoặc từ 1 → 3)
+        if (oldVersion < 3) {
+          // Xóa bảng cũ nếu có
+          await db.execute('DROP TABLE IF EXISTS saving_history');
+
+          // Tạo lại bảng với schema mới
           await db.execute('''
-            CREATE TABLE IF NOT EXISTS saving_history (
+            CREATE TABLE saving_history (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               goal_id INTEGER NOT NULL,
               amount INTEGER NOT NULL,
