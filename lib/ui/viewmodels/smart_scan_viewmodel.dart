@@ -2,22 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../domain/models/raw_sms.dart';
+import '../../domain/models/parsed_sms.dart';
+import '../../data/repositories/sms_parser.dart';
 
 /// ViewModel cho màn hình Smart Scan
 /// Quản lý việc đọc và lọc SMS ngân hàng
 class SmartScanViewModel extends ChangeNotifier {
   final Telephony _telephony = Telephony.instance;
+  final SmsParser _parser = SmsParser();
   
   // State
   bool _isScanning = false;
   bool _hasPermission = false;
   List<RawSms> _rawSmsList = [];
+  List<ParsedSms> _parsedSmsList = [];
   String? _errorMessage;
   
   // Getters
   bool get isScanning => _isScanning;
   bool get hasPermission => _hasPermission;
   List<RawSms> get rawSmsList => _rawSmsList;
+  List<ParsedSms> get parsedSmsList => _parsedSmsList;
   String? get errorMessage => _errorMessage;
   
   // Danh sách số điện thoại/tên ngân hàng cần lọc
@@ -104,10 +109,18 @@ class SmartScanViewModel extends ChangeNotifier {
       print('✅ [SmartScan] Hoàn thành quét SMS');
       _logSampleMessages();
       
+      // Bước 5: Parse SMS sang ParsedSms
+      print('\n🔄 [SmartScan] Bắt đầu parse SMS...');
+      _parsedSmsList = _parser.parseMultiple(_rawSmsList);
+      
+      print('✅ [SmartScan] Parse hoàn tất: ${_parsedSmsList.length} SMS thành công');
+      _logParsedSamples();
+      
     } catch (e) {
       _errorMessage = 'Lỗi khi quét SMS: $e';
       print('❌ [SmartScan] Lỗi: $e');
       _rawSmsList = [];
+      _parsedSmsList = [];
     } finally {
       _isScanning = false;
       notifyListeners();
@@ -170,7 +183,7 @@ class SmartScanViewModel extends ChangeNotifier {
       return;
     }
     
-    print('\n📋 [SmartScan] Mẫu tin nhắn (tối đa 3):');
+    print('\n📋 [SmartScan] Mẫu tin nhắn RAW (tối đa 3):');
     final sampleCount = _rawSmsList.length > 3 ? 3 : _rawSmsList.length;
     
     for (int i = 0; i < sampleCount; i++) {
@@ -182,9 +195,34 @@ class SmartScanViewModel extends ChangeNotifier {
     }
   }
   
+  /// Log các SMS đã parse thành công
+  void _logParsedSamples() {
+    if (_parsedSmsList.isEmpty) {
+      print('⚠️ [SmartScan] Không có SMS nào được parse thành công');
+      return;
+    }
+    
+    print('\n📊 [SmartScan] Mẫu SMS đã parse (tối đa 5):');
+    final sampleCount = _parsedSmsList.length > 5 ? 5 : _parsedSmsList.length;
+    
+    for (int i = 0; i < sampleCount; i++) {
+      final parsed = _parsedSmsList[i];
+      final typeIcon = parsed.type == TransactionType.income ? '📈' : '📉';
+      print('   ${i + 1}. $typeIcon ${parsed.bank}: ${parsed.amount.toStringAsFixed(0)} VND');
+      print('      Content: ${parsed.content}');
+      print('      Date: ${parsed.dateTime}');
+      print('');
+    }
+    
+    // Thống kê
+    final successRate = (_parsedSmsList.length / _rawSmsList.length * 100).toStringAsFixed(1);
+    print('📊 [SmartScan] Tỷ lệ parse thành công: $successRate% (${_parsedSmsList.length}/${_rawSmsList.length})');
+  }
+  
   /// Reset state
   void reset() {
     _rawSmsList = [];
+    _parsedSmsList = [];
     _errorMessage = null;
     _isScanning = false;
     notifyListeners();
