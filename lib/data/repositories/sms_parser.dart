@@ -37,7 +37,7 @@ class SmsParser {
       // Tìm parser phù hợp với bank
       BankSmsParser? selectedParser;
       for (final parser in _bankParsers) {
-        if (parser.canParse(sms.address)) {
+        if (parser.canParse(sms)) {
           selectedParser = parser;
           print('✅ [Parser] Sử dụng ${parser.bankName}Parser');
           break;

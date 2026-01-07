@@ -10,8 +10,8 @@ abstract class BankSmsParser {
   List<String> get senderIds;
   
   /// Kiểm tra xem SMS có phải từ ngân hàng này không
-  bool canParse(String address) {
-    final upperAddress = address.toUpperCase();
+  bool canParse(RawSms rawSms) {
+    final upperAddress = rawSms.address.toUpperCase();
     return senderIds.any((id) => upperAddress.contains(id.toUpperCase()));
   }
   
@@ -35,42 +35,33 @@ abstract class BankSmsParser {
 /// Base class với các phương thức chung cho tất cả banks
 abstract class BaseBankParser implements BankSmsParser {
   @override
+  bool canParse(RawSms rawSms) {
+    final upperAddress = rawSms.address.toUpperCase();
+    return senderIds.any((id) => upperAddress.contains(id.toUpperCase()));
+  }
+  
+  @override
   ParsedSms? parse(RawSms sms) {
     try {
-      print('🔄 [${bankName}Parser] Đang parse SMS từ: ${sms.address}');
-      
-      final body = sms.body;
-      
-      // Bước 1: Tìm số tiền
-      final amount = extractAmount(body);
-      if (amount == null) {
-        print('❌ [${bankName}Parser] Không tìm thấy số tiền');
+      final amount = extractAmount(sms.body);
+      if (amount == null || amount <= 0) {
         return null;
       }
       
-      // Bước 2: Xác định loại giao dịch
-      final type = extractTransactionType(body);
+      final transactionType = extractTransactionType(sms.body);
+      final dateTime = extractDateTime(sms.body) ?? sms.date ?? DateTime.now();
+      final content = extractContent(sms.body);
       
-      // Bước 3: Tìm thời gian giao dịch
-      final dateTime = extractDateTime(body) ?? sms.date;
-      
-      // Bước 4: Trích xuất nội dung
-      final content = extractContent(body);
-      
-      final parsed = ParsedSms(
+      return ParsedSms(
         amount: amount,
-        type: type,
+        type: transactionType,
         bank: bankName,
         dateTime: dateTime,
         content: content,
-        rawText: body,
+        rawText: sms.body,
       );
-      
-      print('✅ [${bankName}Parser] Parse thành công: ${parsed.amount} VND');
-      return parsed;
-      
     } catch (e) {
-      print('❌ [${bankName}Parser] Lỗi khi parse: $e');
+      print('❌ [${bankName}Parser] Error: $e');
       return null;
     }
   }
@@ -78,23 +69,19 @@ abstract class BaseBankParser implements BankSmsParser {
   /// Default implementation cho extractAmount
   @override
   double? extractAmount(String text) {
-    final patterns = [
-      RegExp(r'[-+]?\s*(\d{1,3}(?:[,\.]\d{3})*(?:[,\.]\d+)?)\s*VND', caseSensitive: false),
-      RegExp(r'[-+]?\s*(\d+(?:[,\.]\d{3})*)\s*d', caseSensitive: false),
-      RegExp(r'So tien[:\s]+[-+]?\s*(\d{1,3}(?:[,\.]\d{3})*)', caseSensitive: false),
-      RegExp(r'GD[:\s]+[-+]?\s*(\d{1,3}(?:[,\.]\d{3})*)', caseSensitive: false),
-    ];
+    final pattern = RegExp(
+      r'([-+]?\d{1,3}(?:[,\.]\d{3})*)\s*VND',
+      caseSensitive: false,
+    );
     
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(text);
-      if (match != null) {
-        String amountStr = match.group(1) ?? '';
-        amountStr = amountStr.replaceAll(',', '').replaceAll('.', '');
-        
-        final amount = double.tryParse(amountStr);
-        if (amount != null && amount > 0) {
-          return amount;
-        }
+    final match = pattern.firstMatch(text);
+    if (match != null) {
+      String amountStr = match.group(1) ?? '';
+      amountStr = amountStr.replaceAll(RegExp(r'[-+]'), '');
+      amountStr = amountStr.replaceAll(',', '').replaceAll('.', '');
+      final amount = double.tryParse(amountStr);
+      if (amount != null && amount > 0) {
+        return amount;
       }
     }
     
@@ -107,36 +94,40 @@ abstract class BaseBankParser implements BankSmsParser {
     final lowerText = text.toLowerCase();
     
     final expenseKeywords = [
-      'rut tien', 'thanh toan', 'chuyen tien', 'chuyen khoan',
-      'mua hang', 'giam', 'tru', 'chi tieu', 'ghi no',
+      'thanh toan', 'rut tien', 'chi tien', 'mua', 'giao dich',
+      'tai', 'so tien', 'gd:', 'chuyen tien di',
     ];
     
     final incomeKeywords = [
-      'nap tien', 'chuyen den', 'nhan tien', 'hoan tien',
-      'tang', 'cong', 'nhan', 'ghi co',
+      'nap tien', 'gui tien', 'nhan', 'luong', 'thuong',
+      'hoan tien', 'refund', 'chuyen tien den',
     ];
     
-    // Kiểm tra dấu
+    // Kiểm tra dấu âm (chi tiêu)
     if (text.contains(RegExp(r'-\s*\d')) || text.contains(RegExp(r'GD:\s*-'))) {
       return TransactionType.expense;
     }
+    
+    // Kiểm tra dấu dương (thu nhập)
     if (text.contains(RegExp(r'\+\s*\d')) || text.contains(RegExp(r'GD:\s*\+'))) {
       return TransactionType.income;
     }
     
-    // Kiểm tra từ khóa
+    // Kiểm tra từ khóa chi tiêu
     for (final keyword in expenseKeywords) {
       if (lowerText.contains(keyword)) {
         return TransactionType.expense;
       }
     }
     
+    // Kiểm tra từ khóa thu nhập
     for (final keyword in incomeKeywords) {
       if (lowerText.contains(keyword)) {
         return TransactionType.income;
       }
     }
     
+    // Mặc định: chi tiêu
     return TransactionType.expense;
   }
   
@@ -144,30 +135,59 @@ abstract class BaseBankParser implements BankSmsParser {
   @override
   DateTime? extractDateTime(String text) {
     final patterns = [
-      RegExp(r'(\d{1,2})[/-](\d{1,2})[/-](\d{4})\s+(\d{1,2}):(\d{2})'),
-      RegExp(r'luc\s+(\d{1,2})[/-](\d{1,2})[/-](\d{4})\s+(\d{1,2}):(\d{2})', caseSensitive: false),
-      RegExp(r'vao\s+(\d{1,2})[/-](\d{1,2})[/-](\d{4})\s+(\d{1,2}):(\d{2})', caseSensitive: false),
-      RegExp(r'(\d{2})/(\d{2})/(\d{2})\s+(\d{2}):(\d{2})'), // dd/MM/yy HH:mm
+      // dd/MM/yyyy HH:mm:ss
+      RegExp(r'(\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})', caseSensitive: false),
+      // dd/MM/yyyy HH:mm
+      RegExp(r'(\d{1,2})/(\d{1,2})/(\d{4})\s+(\d{1,2}):(\d{2})', caseSensitive: false),
+      // HH:mm dd/MM/yyyy
+      RegExp(r'(\d{1,2}):(\d{2})\s+(\d{1,2})/(\d{1,2})/(\d{4})', caseSensitive: false),
+      // dd/MM/yyyy
+      RegExp(r'(\d{1,2})/(\d{1,2})/(\d{4})', caseSensitive: false),
     ];
     
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
         try {
-          final day = int.parse(match.group(1)!);
-          final month = int.parse(match.group(2)!);
-          var year = int.parse(match.group(3)!);
-          final hour = int.parse(match.group(4)!);
-          final minute = int.parse(match.group(5)!);
+          int day, month, year, hour = 0, minute = 0;
           
-          // Handle 2-digit year
-          if (year < 100) {
-            year += 2000;
+          // Xác định format dựa trên số nhóm
+          if (match.groupCount == 6) {
+            // dd/MM/yyyy HH:mm:ss
+            day = int.parse(match.group(1) ?? '1');
+            month = int.parse(match.group(2) ?? '1');
+            year = int.parse(match.group(3) ?? '2024');
+            hour = int.parse(match.group(4) ?? '0');
+            minute = int.parse(match.group(5) ?? '0');
+          } else if (match.groupCount == 5) {
+            // dd/MM/yyyy HH:mm hoặc HH:mm dd/MM/yyyy
+            if (match.group(1)!.length <= 2 && int.parse(match.group(1)!) <= 31) {
+              // dd/MM/yyyy HH:mm
+              day = int.parse(match.group(1) ?? '1');
+              month = int.parse(match.group(2) ?? '1');
+              year = int.parse(match.group(3) ?? '2024');
+              hour = int.parse(match.group(4) ?? '0');
+              minute = int.parse(match.group(5) ?? '0');
+            } else {
+              // HH:mm dd/MM/yyyy
+              hour = int.parse(match.group(1) ?? '0');
+              minute = int.parse(match.group(2) ?? '0');
+              day = int.parse(match.group(3) ?? '1');
+              month = int.parse(match.group(4) ?? '1');
+              year = int.parse(match.group(5) ?? '2024');
+            }
+          } else if (match.groupCount == 3) {
+            // dd/MM/yyyy
+            day = int.parse(match.group(1) ?? '1');
+            month = int.parse(match.group(2) ?? '1');
+            year = int.parse(match.group(3) ?? '2024');
+          } else {
+            continue;
           }
           
           return DateTime(year, month, day, hour, minute);
         } catch (e) {
-          print('⚠️ [Parser] Lỗi parse thời gian: $e');
+          continue;
         }
       }
     }
@@ -179,35 +199,36 @@ abstract class BaseBankParser implements BankSmsParser {
   @override
   String extractContent(String text) {
     final contentPatterns = [
-      RegExp(r'ND:\s*([^\n\r.]+)', caseSensitive: false),
-      RegExp(r'Noi dung:\s*([^\n\r.]+)', caseSensitive: false),
-      RegExp(r'Content:\s*([^\n\r.]+)', caseSensitive: false),
-      RegExp(r'Tai:\s*([^\n\r.]+)', caseSensitive: false),
-      RegExp(r'Mo ta:\s*([^\n\r.]+)', caseSensitive: false),
-      RegExp(r'tai\s+([A-Z\s]{3,})', caseSensitive: false),
+      RegExp(r'ND:\s*([^\n\r.;]+)', caseSensitive: false),
+      RegExp(r'Noi dung:\s*([^\n\r.;]+)', caseSensitive: false),
+      RegExp(r'Tai:\s*([^\n\r.;]+)', caseSensitive: false),
+      RegExp(r'tai\s+([A-Z][A-Z\s]+?)(?:[.;,]|\s+[A-Z]{2,})', caseSensitive: false),
     ];
     
     for (final pattern in contentPatterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
         String content = match.group(1)?.trim() ?? '';
-        content = content.replaceAll(RegExp(r'[.;,]+$'), '');
+        content = content.replaceAll(RegExp(r'[.;,]+$'), '').trim();
         if (content.isNotEmpty && content.length < 100) {
           return content;
         }
       }
     }
     
-    // Tìm các từ viết hoa
-    final upperWordsMatch = RegExp(r'[A-Z]{2,}(?:\s+[A-Z]{2,})*').firstMatch(text);
-    if (upperWordsMatch != null) {
-      final content = upperWordsMatch.group(0)?.trim() ?? '';
-      if (content.length >= 3 && content.length < 50) {
+    // Tìm các từ viết hoa liên tiếp (thường là merchant name)
+    final uppercasePattern = RegExp(r'\b([A-Z]{2,}(?:\s+[A-Z]+)*)\b');
+    final matches = uppercasePattern.allMatches(text);
+    
+    for (final match in matches) {
+      final content = match.group(1) ?? '';
+      if (content.length > 2 && content.length < 50 && 
+          !content.contains(RegExp(r'(TK|VND|GD|ND|SD|SO|DU)')) &&
+          !content.contains(RegExp(r'\d'))) {
         return content;
       }
     }
     
-    // Fallback
-    return text.length > 50 ? text.substring(0, 50) : text;
+    return 'Giao dịch';
   }
 }

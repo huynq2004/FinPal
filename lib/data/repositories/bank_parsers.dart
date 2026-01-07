@@ -15,18 +15,18 @@ class VietcombankParser extends BaseBankParser {
   double? extractAmount(String text) {
     // VCB format: "TK xxx -55,000VND" hoặc "GD: -55,000"
     final patterns = [
-      RegExp(r'TK\s+\d+\s+([-+]?\d{1,3}(?:[,\.]\d{3})*)\s*VND', caseSensitive: false),
+      RegExp(r'TK\s+\w+\s+([-+]?\d{1,3}(?:[,\.]\d{3})*)\s*VND', caseSensitive: false),
       RegExp(r'GD:\s*([-+]?\d{1,3}(?:[,\.]\d{3})*)\s*VND', caseSensitive: false),
-      ...super.extractAmount(text) != null ? [] : [
-        RegExp(r'([-+]?\d{1,3}(?:[,\.]\d{3})*)\s*VND', caseSensitive: false),
-      ],
+      RegExp(r'([-+]?\d{1,3}(?:[,\.]\d{3})*)\s*VND', caseSensitive: false),
     ];
     
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
         String amountStr = match.group(1) ?? '';
+        amountStr = amountStr.replaceAll(RegExp(r'[-+]'), '');
         amountStr = amountStr.replaceAll(',', '').replaceAll('.', '');
+        
         final amount = double.tryParse(amountStr);
         if (amount != null && amount > 0) {
           return amount;
@@ -49,7 +49,6 @@ class TechcombankParser extends BaseBankParser {
   
   @override
   double? extractAmount(String text) {
-    // Techcombank format: "GD: -120,500VND"
     final patterns = [
       RegExp(r'GD:\s*([-+]?\d{1,3}(?:[,\.]\d{3})*)\s*VND', caseSensitive: false),
       RegExp(r'So tien GD:\s*([-+]?\d{1,3}(?:[,\.]\d{3})*)', caseSensitive: false),
@@ -82,7 +81,6 @@ class MBBankParser extends BaseBankParser {
   
   @override
   String extractContent(String text) {
-    // MBBank thường dùng "Tai:" thay vì "ND:"
     final patterns = [
       RegExp(r'Tai:\s*([^\n\r.]+)', caseSensitive: false),
       RegExp(r'ND:\s*([^\n\r.]+)', caseSensitive: false),
