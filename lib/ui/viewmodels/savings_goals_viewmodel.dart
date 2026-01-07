@@ -59,11 +59,4 @@ class SavingsGoalsViewModel extends ChangeNotifier {
   double progressOf(SavingGoal goal) {
     return goal.currentSaved / goal.targetAmount;
   }
-
-  /// Cập nhật một mục tiêu hiện có theo `id`.
-  void updateGoal(SavingGoal updated) {
-    if (updated.id == null) return;
-    _goals = _goals.map((g) => g.id == updated.id ? updated : g).toList();
-    notifyListeners();
-  }
 }
