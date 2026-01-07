@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:finpal/domain/models/saving_goal.dart';
 import 'package:finpal/ui/screens/edit_saving_goal_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:finpal/ui/viewmodels/savings_goals_viewmodel.dart';
+import 'package:finpal/ui/screens/delete_saving_goal_screen.dart';
 import 'package:finpal/ui/screens/confirm_saving_screen.dart';
 
 class SavingGoalDetailScreen extends StatefulWidget {
@@ -432,27 +435,51 @@ class _SavingGoalDetailScreenState extends State<SavingGoalDetailScreen> {
             ],
             onSelected: (value) async {
               if (value == 'edit') {
+                final vm = context.read<SavingsGoalsViewModel>();
                 final updated = await Navigator.push<SavingGoal?>(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => EditSavingGoalScreen(goal: widget.goal),
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: vm,
+                      child: EditSavingGoalScreen(goal: widget.goal),
+                    ),
                   ),
                 );
                 if (updated != null && mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SavingGoalDetailScreen(goal: updated),
-                    ),
-                  );
+                  // Reload goals list to get latest data
+                  await vm.loadGoals();
+                  if (mounted) {
+                    // Find the updated goal
+                    final refreshed = vm.goals.firstWhere(
+                      (g) => g.id == updated.id,
+                      orElse: () => updated,
+                    );
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: vm,
+                          child: SavingGoalDetailScreen(goal: refreshed),
+                        ),
+                      ),
+                    );
+                  }
                 }
               } else if (value == 'delete') {
-                // TODO: Confirm delete
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Chức năng xóa sẽ được cập nhật'),
+                final vm = context.read<SavingsGoalsViewModel>();
+                final confirmed = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: vm,
+                      child: DeleteSavingGoalScreen(goal: widget.goal),
+                    ),
                   ),
                 );
+                if (confirmed == true && mounted) {
+                  // Pop this detail screen and notify list via result
+                  Navigator.of(context).pop(true);
+                }
               }
             },
           ),
@@ -630,13 +657,41 @@ class _SavingGoalDetailScreenState extends State<SavingGoalDetailScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final amount = await Navigator.push<int>(
                     context,
                     MaterialPageRoute(
                       builder: (_) => ConfirmSavingScreen(goal: widget.goal),
                     ),
                   );
+
+                  if (amount != null && amount > 0 && mounted) {
+                    final vm = context.read<SavingsGoalsViewModel>();
+                    try {
+                      await vm.addSavings(widget.goal.id!, amount);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '✅ Đã thêm ${_formatCurrency(amount)}đ vào hũ tiết kiệm!',
+                            ),
+                            backgroundColor: const Color(0xFF2ECC71),
+                          ),
+                        );
+                        // Refresh screen
+                        setState(() {});
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Lỗi: $e'),
+                            backgroundColor: const Color(0xFFFF5A5F),
+                          ),
+                        );
+                      }
+                    }
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.all(16),
