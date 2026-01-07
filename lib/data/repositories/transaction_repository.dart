@@ -20,6 +20,65 @@ class TransactionRepository {
     }
   }
 
+  /// Kiểm tra xem giao dịch đã tồn tại hay chưa
+  /// Rule: amount + time ±1 phút + bank + content (note)
+  Future<bool> isDuplicateTransaction({
+    required int amount,
+    required DateTime time,
+    String? bank,
+    String? content,
+  }) async {
+    try {
+      final db = await _dbProvider.database;
+      
+      // Tính thời gian ±1 phút
+      final startTime = time.subtract(const Duration(minutes: 1));
+      final endTime = time.add(const Duration(minutes: 1));
+      
+      // Query tìm giao dịch trùng
+      final List<Map<String, dynamic>> maps = await db.query(
+        'transactions',
+        where: 'amount = ? AND created_at >= ? AND created_at <= ?',
+        whereArgs: [
+          amount,
+          startTime.toIso8601String(),
+          endTime.toIso8601String(),
+        ],
+      );
+      
+      // Nếu không có giao dịch nào trong khoảng thời gian → không trùng
+      if (maps.isEmpty) return false;
+      
+      // Kiểm tra thêm bank và content
+      for (final map in maps) {
+        final existingBank = map['bank'] as String?;
+        final existingNote = map['note'] as String?;
+        
+        // So sánh bank (bỏ qua nếu một trong hai null)
+        final bankMatch = (bank == null || existingBank == null) 
+            ? true 
+            : bank.toLowerCase() == existingBank.toLowerCase();
+        
+        // So sánh content/note (bỏ qua nếu một trong hai null)
+        final contentMatch = (content == null || existingNote == null)
+            ? true
+            : content.toLowerCase() == existingNote.toLowerCase();
+        
+        // Nếu tất cả điều kiện match → là trùng
+        if (bankMatch && contentMatch) {
+          print('⚠️ [TransactionRepo] Phát hiện giao dịch trùng: amount=$amount, time=$time, bank=$bank');
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (e) {
+      print('❌ [TransactionRepo] Lỗi khi kiểm tra trùng: ${e.toString()}');
+      // Nếu có lỗi, cho phép thêm giao dịch (fail-safe)
+      return false;
+    }
+  }
+
   Future<Transaction> insertTransaction(Transaction transaction) async {
     try {
       final db = await _dbProvider.database;
@@ -28,6 +87,30 @@ class TransactionRepository {
       map.remove('id');
       final id = await db.insert('transactions', map);
       return transaction.copyWith(id: id);
+    } catch (e) {
+      throw Exception('Lỗi khi thêm giao dịch: ${e.toString()}');
+    }
+  }
+  
+  /// Insert transaction với kiểm tra trùng lặp
+  /// Trả về null nếu giao dịch đã tồn tại (duplicate)
+  Future<Transaction?> insertTransactionIfNotDuplicate(Transaction transaction) async {
+    try {
+      // Kiểm tra trùng lặp
+      final isDuplicate = await isDuplicateTransaction(
+        amount: transaction.amount,
+        time: transaction.createdAt,
+        bank: transaction.bank,
+        content: transaction.note,
+      );
+      
+      if (isDuplicate) {
+        print('⏭️ [TransactionRepo] Bỏ qua giao dịch trùng lặp');
+        return null; // Trả về null để báo hiệu đã tồn tại
+      }
+      
+      // Nếu không trùng, thêm mới
+      return await insertTransaction(transaction);
     } catch (e) {
       throw Exception('Lỗi khi thêm giao dịch: ${e.toString()}');
     }

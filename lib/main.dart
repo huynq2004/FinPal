@@ -8,6 +8,7 @@ import 'ui/root_scaffold.dart';
 // ViewModels (Sprint 1)
 import 'ui/viewmodels/dashboard_viewmodel.dart';
 import 'ui/viewmodels/transaction_history_viewmodel.dart';
+import 'ui/viewmodels/smart_scan_viewmodel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,7 @@ class FinPalApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => DashboardViewModel()),
         ChangeNotifierProvider(create: (_) => TransactionHistoryViewModel()),
+        ChangeNotifierProvider(create: (_) => SmartScanViewModel()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
