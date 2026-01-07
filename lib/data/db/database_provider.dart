@@ -4,8 +4,17 @@ import 'package:path/path.dart';
 class DatabaseProvider {
   static final DatabaseProvider instance = DatabaseProvider._init();
   static Database? _database;
+  final bool testMode;
 
-  DatabaseProvider._init();
+  DatabaseProvider._init({this.testMode = false});
+  
+  /// Constructor cho test với in-memory database
+  factory DatabaseProvider({bool testMode = false}) {
+    if (testMode) {
+      return DatabaseProvider._init(testMode: true);
+    }
+    return instance;
+  }
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -14,6 +23,18 @@ class DatabaseProvider {
   }
 
   Future<Database> _initDb() async {
+    if (testMode) {
+      // Sử dụng in-memory database cho test
+      return await openDatabase(
+        inMemoryDatabasePath,
+        version: 2,
+        onCreate: (db, version) async {
+          await createTables(db);
+          await seedCategories(db);
+        },
+      );
+    }
+    
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'finpal.db');
     return await openDatabase(
@@ -51,6 +72,15 @@ class DatabaseProvider {
         }
       },
     );
+  }
+  
+  /// Đóng database (dùng cho test)
+  Future<void> close() async {
+    final db = _database;
+    if (db != null) {
+      await db.close();
+      _database = null;
+    }
   }
 
   Future<void> createTables(Database db) async {
