@@ -162,30 +162,73 @@ class SavingsGoalsScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final SavingGoal goal = vm.goals[index];
                         final progress = vm.progressOf(goal).clamp(0.0, 1.0);
-                        final suggestion = vm.suggestionFor(goal);
+                        final suggestion = vm.calculateSuggestedWeekly(goal);
 
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x0F000000),
-                                blurRadius: 6,
-                                offset: Offset(0, 1),
+                        return GestureDetector(
+                          onTap: () async {
+                            final vm = context.read<SavingsGoalsViewModel>();
+                            final deleted = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChangeNotifierProvider.value(
+                                  value: vm,
+                                  child: SavingGoalDetailScreen(goal: goal),
+                                ),
                               ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Column(
+                            );
+                            if (deleted == true && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Đã xóa mục tiêu.'),
+                                  backgroundColor: Color(0xFFFF5A5F),
+                                ),
+                              );
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0F000000),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            goal.name,
+                                            style: const TextStyle(
+                                              color: Color(0xFF0F172A),
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Mục tiêu: ${_formatCurrency(goal.targetAmount)}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF64748B),
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
@@ -316,13 +359,23 @@ class SavingsGoalsScreen extends StatelessWidget {
     );
 
     if (result != null && context.mounted) {
-      context.read<SavingsGoalsViewModel>().addGoal(
+      // Save to database via viewmodel
+      await context.read<SavingsGoalsViewModel>().addGoal(
         name: result.name,
         targetAmount: result.targetAmount,
         initialSaved: result.currentSaved,
         deadline: result.deadline,
         createdAt: result.createdAt,
       );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Đã tạo mục tiêu mới!'),
+            backgroundColor: Color(0xFF2ECC71),
+          ),
+        );
+      }
     }
   }
 }
