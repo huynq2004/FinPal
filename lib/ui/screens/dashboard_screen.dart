@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../viewmodels/dashboard_viewmodel.dart';
+import '../viewmodels/monthly_report_viewmodel.dart';
 import '../widgets/pie_chart.dart';
 import '../widgets/transaction_tile.dart';
 import 'settings_screen.dart';
 import 'transaction_history_screen.dart';
 import 'manual_transaction_screen.dart';
+import 'monthly_report_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -41,7 +43,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 /// ================= HEADER =================
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 28),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    MediaQuery.of(context).padding.top + 16,
+                    16,
+                    28,
+                  ),
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Color(0xFF3E8AFF), Color(0xFF325DFF)],
@@ -63,27 +70,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.history, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.history,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (_) => const TransactionHistoryScreen()),
+                                      builder: (_) =>
+                                          const TransactionHistoryScreen(),
+                                    ),
                                   );
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.settings, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.settings,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (_) => const SettingsScreen()),
+                                      builder: (_) => const SettingsScreen(),
+                                    ),
                                   );
                                 },
                               ),
                             ],
-                          )
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -91,7 +107,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       /// Summary Card
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 20),
+                          horizontal: 16,
+                          vertical: 20,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -102,16 +120,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  vm.monthLabel(DateTime.now().year,
-                                      DateTime.now().month),
+                                  vm.monthLabel(
+                                    DateTime.now().year,
+                                    DateTime.now().month,
+                                  ),
                                   style: const TextStyle(
-                                      color: Color(0xFF64748B)),
+                                    color: Color(0xFF64748B),
+                                  ),
                                 ),
-                                const Text(
-                                  'Đổi tháng',
-                                  style:
-                                      TextStyle(color: Color(0xFF3E8AFF)),
-                                )
+                                GestureDetector(
+                                  onTap: () {
+                                    final now = DateTime.now();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ChangeNotifierProvider(
+                                          create: (_) =>
+                                              MonthlyReportViewModel(),
+                                          child: MonthlyReportScreen(
+                                            year: now.year,
+                                            month: now.month,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Báo cáo',
+                                    style: TextStyle(
+                                      color: Color(0xFF3E8AFF),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 14),
@@ -147,7 +188,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Card(
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     color: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -174,16 +216,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                           ...vm.categories.map((c) {
                             return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Row(
                                 children: [
                                   Container(
                                     width: 10,
                                     height: 10,
                                     decoration: BoxDecoration(
-                                        color: c.color,
-                                        shape: BoxShape.circle),
+                                      color: c.color,
+                                      shape: BoxShape.circle,
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(child: Text(c.name)),
@@ -193,7 +235,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       '${(c.percent * 100).toStringAsFixed(0)}%',
                                       textAlign: TextAlign.right,
                                       style: const TextStyle(
-                                          color: Color(0xFF64748B)),
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -216,8 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 /// ================= GIAO DỊCH GẦN ĐÂY =================
                 Padding(
-                  padding:
-                      const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -230,8 +272,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) =>
-                                    const TransactionHistoryScreen()),
+                              builder: (_) => const TransactionHistoryScreen(),
+                            ),
                           );
                         },
                         icon: const Text('Xem thêm'),
@@ -245,14 +287,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Card(
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     color: Colors.white,
-                      child: Column(
+                    child: Column(
                       children: vm.recentTransactions
-                        .take(3)
-                        .map((tx) => TransactionTile(tx: tx))
-                        .toList(),
-                      ),
+                          .take(3)
+                          .map((tx) => TransactionTile(tx: tx))
+                          .toList(),
+                    ),
                   ),
                 ),
 
@@ -262,6 +305,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
+
       /// ================= FAB =================
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -288,7 +332,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               end: Alignment.bottomRight,
             ),
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 8, offset: const Offset(0, 4))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: const Icon(Icons.add, color: Colors.white),
         ),
@@ -296,7 +346,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  
   Widget _summaryRow(String label, String value, Color color) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -320,13 +369,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         Text(
           value,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: color, fontWeight: FontWeight.w500),
         ),
       ],
     );
   }
-
 }
