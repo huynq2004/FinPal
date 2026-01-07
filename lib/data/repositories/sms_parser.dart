@@ -1,23 +1,97 @@
 import '../../domain/models/raw_sms.dart';
 import '../../domain/models/parsed_sms.dart';
 import 'category_engine.dart';
+import 'bank_parser_base.dart';
+import 'bank_parsers.dart';
 
 /// Class xử lý parse SMS ngân hàng thành dữ liệu có cấu trúc
+/// Sử dụng bank-specific parsers để hỗ trợ nhiều định dạng SMS
 class SmsParser {
   final CategoryEngine _categoryEngine = CategoryEngine();
+  
+  /// Danh sách các bank parsers
+  final List<BankSmsParser> _bankParsers = [
+    VietcombankParser(),
+    TechcombankParser(),
+    MBBankParser(),
+    ACBParser(),
+    BIDVParser(),
+    VietinbankParser(),
+    VPBankParser(),
+    SacombankParser(),
+    HDBankParser(),
+    TPBankParser(),
+    SeABankParser(),
+    AgribankParser(),
+    SHBParser(),
+    VIBParser(),
+    OCBParser(),
+  ];
+  
   /// Parse một SMS thành ParsedSms
   /// Trả về null nếu không thể parse (SMS không đúng format ngân hàng)
   ParsedSms? parse(RawSms sms) {
     try {
       print('🔄 [Parser] Đang parse SMS từ: ${sms.address}');
       
+      // Tìm parser phù hợp với bank
+      BankSmsParser? selectedParser;
+      for (final parser in _bankParsers) {
+        if (parser.canParse(sms.address)) {
+          selectedParser = parser;
+          print('✅ [Parser] Sử dụng ${parser.bankName}Parser');
+          break;
+        }
+      }
+      
+      // Nếu không tìm thấy parser cụ thể, dùng generic parser
+      if (selectedParser == null) {
+        print('⚠️ [Parser] Không tìm thấy parser cụ thể, dùng generic parser');
+        return _parseGeneric(sms);
+      }
+      
+      // Parse bằng bank-specific parser
+      final parsed = selectedParser.parse(sms);
+      
+      if (parsed == null) {
+        print('❌ [Parser] ${selectedParser.bankName}Parser không parse được');
+        return null;
+      }
+      
+      // Bổ sung categoryId và categoryName
+      final categoryId = _categoryEngine.classify(parsed.content);
+      final categoryName = _categoryEngine.getCategoryNameById(categoryId);
+      
+      final enrichedParsed = ParsedSms(
+        amount: parsed.amount,
+        type: parsed.type,
+        bank: parsed.bank,
+        dateTime: parsed.dateTime,
+        content: parsed.content,
+        rawText: parsed.rawText,
+        categoryId: categoryId,
+        categoryName: categoryName,
+      );
+      
+      print('✅ [Parser] Parse thành công: $enrichedParsed');
+      return enrichedParsed;
+      
+    } catch (e) {
+      print('❌ [Parser] Lỗi khi parse: $e');
+      return null;
+    }
+  }
+  
+  /// Generic parser cho các SMS không match bank cụ thể
+  ParsedSms? _parseGeneric(RawSms sms) {
+    try {
       final body = sms.body;
       final address = sms.address;
       
       // Bước 1: Tìm số tiền
       final amount = _extractAmount(body);
       if (amount == null) {
-        print('❌ [Parser] Không tìm thấy số tiền');
+        print('❌ [GenericParser] Không tìm thấy số tiền');
         return null;
       }
       
@@ -33,7 +107,7 @@ class SmsParser {
       // Bước 5: Trích xuất nội dung giao dịch
       final content = _extractContent(body);
       
-      // Bước 6: Phân loại category bằng CategoryEngine
+      // Bước 6: Phân loại category
       final categoryId = _categoryEngine.classify(content);
       final categoryName = _categoryEngine.getCategoryNameById(categoryId);
       
@@ -48,11 +122,11 @@ class SmsParser {
         categoryName: categoryName,
       );
       
-      print('✅ [Parser] Parse thành công: $parsed');
+      print('✅ [GenericParser] Parse thành công: $parsed');
       return parsed;
       
     } catch (e) {
-      print('❌ [Parser] Lỗi khi parse: $e');
+      print('❌ [GenericParser] Lỗi khi parse: $e');
       return null;
     }
   }
