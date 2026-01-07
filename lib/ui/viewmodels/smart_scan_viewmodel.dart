@@ -5,25 +5,58 @@ import '../../domain/models/raw_sms.dart';
 import '../../domain/models/parsed_sms.dart';
 import '../../data/repositories/sms_parser.dart';
 
+/// Enum state cho quá trình Smart Scan
+enum SmartScanState {
+  idle,              // Chưa bắt đầu quét
+  checkingPermission, // Đang kiểm tra quyền SMS
+  permissionDenied,   // Người dùng từ chối quyền
+  scanning,           // Đang quét SMS từ inbox
+  filtering,          // Đang lọc SMS ngân hàng
+  parsing,            // Đang parse SMS
+  success,            // Hoàn thành thành công
+  error,              // Có lỗi xảy ra
+}
+
+/// Model cho thông tin lỗi parse
+class ParseError {
+  final RawSms rawSms;
+  final String reason;
+  
+  ParseError({required this.rawSms, required this.reason});
+}
+
 /// ViewModel cho màn hình Smart Scan
-/// Quản lý việc đọc và lọc SMS ngân hàng
+/// Quản lý việc đọc và lọc SMS ngân hàng với error handling
 class SmartScanViewModel extends ChangeNotifier {
   final Telephony _telephony = Telephony.instance;
   final SmsParser _parser = SmsParser();
   
   // State
-  bool _isScanning = false;
+  SmartScanState _state = SmartScanState.idle;
   bool _hasPermission = false;
   List<RawSms> _rawSmsList = [];
   List<ParsedSms> _parsedSmsList = [];
+  List<ParseError> _parseErrors = [];
   String? _errorMessage;
   
   // Getters
-  bool get isScanning => _isScanning;
+  SmartScanState get state => _state;
+  bool get isScanning => _state == SmartScanState.scanning || 
+                         _state == SmartScanState.filtering || 
+                         _state == SmartScanState.parsing;
   bool get hasPermission => _hasPermission;
   List<RawSms> get rawSmsList => _rawSmsList;
   List<ParsedSms> get parsedSmsList => _parsedSmsList;
+  List<ParseError> get parseErrors => _parseErrors;
   String? get errorMessage => _errorMessage;
+  
+  /// Thống kê
+  int get totalSmsScanned => _rawSmsList.length;
+  int get successfullyParsed => _parsedSmsList.length;
+  int get failedToParse => _parseErrors.length;
+  double get parseSuccessRate => _rawSmsList.isEmpty 
+      ? 0.0 
+      : (_parsedSmsList.length / _rawSmsList.length * 100);
   
   // Danh sách số điện thoại/tên ngân hàng cần lọc
   static const List<String> _bankAddresses = [
@@ -65,18 +98,22 @@ class SmartScanViewModel extends ChangeNotifier {
   /// Hàm chính: Quét hộp thư SMS và lọc tin nhắn ngân hàng
   Future<void> scanInbox() async {
     try {
-      _isScanning = true;
+      _state = SmartScanState.checkingPermission;
       _errorMessage = null;
+      _parseErrors.clear();
       notifyListeners();
       
       print('🔍 [SmartScan] Bắt đầu quét SMS...');
       
       // Bước 1: Kiểm tra quyền SMS
+      _state = SmartScanState.checkingPermission;
+      notifyListeners();
+      
       final hasPermission = await _checkSmsPermission();
       if (!hasPermission) {
+        _state = SmartScanState.permissionDenied;
         _errorMessage = 'Không có quyền đọc SMS. Vui lòng cấp quyền trong Cài đặt.';
         print('❌ [SmartScan] Không có quyền SMS');
-        _isScanning = false;
         notifyListeners();
         return;
       }
@@ -84,6 +121,9 @@ class SmartScanViewModel extends ChangeNotifier {
       print('✅ [SmartScan] Đã có quyền SMS');
       
       // Bước 2: Đọc tất cả SMS từ inbox
+      _state = SmartScanState.scanning;
+      notifyListeners();
+      
       final messages = await _telephony.getInboxSms(
         columns: [SmsColumn.ADDRESS, SmsColumn.BODY, SmsColumn.DATE, SmsColumn.ID],
       );
@@ -91,6 +131,9 @@ class SmartScanViewModel extends ChangeNotifier {
       print('📨 [SmartScan] Tổng số SMS đọc được: ${messages.length}');
       
       // Bước 3: Lọc SMS ngân hàng
+      _state = SmartScanState.filtering;
+      notifyListeners();
+      
       final filteredMessages = _filterBankSms(messages);
       
       print('🏦 [SmartScan] Số SMS ngân hàng sau khi lọc: ${filteredMessages.length}');
@@ -109,21 +152,63 @@ class SmartScanViewModel extends ChangeNotifier {
       print('✅ [SmartScan] Hoàn thành quét SMS');
       _logSampleMessages();
       
-      // Bước 5: Parse SMS sang ParsedSms
+      // Bước 5: Parse SMS sang ParsedSms với error tracking
+      _state = SmartScanState.parsing;
+      notifyListeners();
+      
       print('\n🔄 [SmartScan] Bắt đầu parse SMS...');
-      _parsedSmsList = _parser.parseMultiple(_rawSmsList);
+      _parseSmsList();
       
       print('✅ [SmartScan] Parse hoàn tất: ${_parsedSmsList.length} SMS thành công');
       _logParsedSamples();
       
-    } catch (e) {
+      // Hoàn thành thành công
+      _state = SmartScanState.success;
+      
+      // Thông báo nếu có SMS không parse được
+      if (_parseErrors.isNotEmpty) {
+        print('⚠️ [SmartScan] Có ${_parseErrors.length} SMS không parse được');
+        _logParseErrors();
+      }
+      
+    } catch (e, stackTrace) {
+      _state = SmartScanState.error;
       _errorMessage = 'Lỗi khi quét SMS: $e';
       print('❌ [SmartScan] Lỗi: $e');
+      print('Stack trace: $stackTrace');
       _rawSmsList = [];
       _parsedSmsList = [];
     } finally {
-      _isScanning = false;
       notifyListeners();
+    }
+  }
+  
+  /// Parse danh sách SMS và track errors
+  void _parseSmsList() {
+    _parsedSmsList.clear();
+    _parseErrors.clear();
+    
+    for (final rawSms in _rawSmsList) {
+      try {
+        final parsed = _parser.parse(rawSms);
+        
+        if (parsed != null) {
+          _parsedSmsList.add(parsed);
+        } else {
+          // SMS không parse được (không đúng format ngân hàng)
+          _parseErrors.add(ParseError(
+            rawSms: rawSms,
+            reason: 'Không đúng format SMS ngân hàng hoặc thiếu thông tin',
+          ));
+        }
+      } catch (e) {
+        // Lỗi exception khi parse
+        _parseErrors.add(ParseError(
+          rawSms: rawSms,
+          reason: 'Lỗi parse: $e',
+        ));
+        print('❌ [SmartScan] Lỗi parse SMS ID ${rawSms.id}: $e');
+      }
     }
   }
   
@@ -215,16 +300,86 @@ class SmartScanViewModel extends ChangeNotifier {
     }
     
     // Thống kê
-    final successRate = (_parsedSmsList.length / _rawSmsList.length * 100).toStringAsFixed(1);
+    final successRate = parseSuccessRate.toStringAsFixed(1);
     print('📊 [SmartScan] Tỷ lệ parse thành công: $successRate% (${_parsedSmsList.length}/${_rawSmsList.length})');
+  }
+  
+  /// Log các SMS không parse được
+  void _logParseErrors() {
+    if (_parseErrors.isEmpty) return;
+    
+    print('\n⚠️ [SmartScan] Danh sách SMS không parse được:');
+    final sampleCount = _parseErrors.length > 5 ? 5 : _parseErrors.length;
+    
+    for (int i = 0; i < sampleCount; i++) {
+      final error = _parseErrors[i];
+      print('   ${i + 1}. From: ${error.rawSms.address}');
+      print('      Date: ${error.rawSms.date}');
+      print('      Reason: ${error.reason}');
+      print('      Body: ${error.rawSms.body.substring(0, error.rawSms.body.length > 60 ? 60 : error.rawSms.body.length)}...');
+      print('');
+    }
+    
+    if (_parseErrors.length > 5) {
+      print('   ... và ${_parseErrors.length - 5} SMS khác');
+    }
+  }
+  
+  /// Lấy thông báo user-friendly về kết quả scan
+  String getScanResultMessage() {
+    switch (_state) {
+      case SmartScanState.idle:
+        return 'Nhấn nút quét để bắt đầu';
+      case SmartScanState.checkingPermission:
+        return 'Đang kiểm tra quyền truy cập SMS...';
+      case SmartScanState.permissionDenied:
+        return 'Cần cấp quyền đọc SMS để sử dụng tính năng này';
+      case SmartScanState.scanning:
+        return 'Đang quét hộp thư SMS...';
+      case SmartScanState.filtering:
+        return 'Đang lọc SMS ngân hàng...';
+      case SmartScanState.parsing:
+        return 'Đang phân tích dữ liệu...';
+      case SmartScanState.success:
+        if (_parsedSmsList.isEmpty) {
+          return 'Không tìm thấy SMS ngân hàng nào';
+        } else if (_parseErrors.isEmpty) {
+          return 'Quét thành công ${_parsedSmsList.length} giao dịch';
+        } else {
+          return 'Quét thành công ${_parsedSmsList.length} giao dịch\n'
+                 '${_parseErrors.length} SMS không phân tích được';
+        }
+      case SmartScanState.error:
+        return _errorMessage ?? 'Có lỗi xảy ra';
+    }
+  }
+  
+  /// Lấy màu cho status message
+  Color getStatusColor() {
+    switch (_state) {
+      case SmartScanState.idle:
+        return Colors.grey;
+      case SmartScanState.checkingPermission:
+      case SmartScanState.scanning:
+      case SmartScanState.filtering:
+      case SmartScanState.parsing:
+        return Colors.blue;
+      case SmartScanState.permissionDenied:
+        return Colors.orange;
+      case SmartScanState.success:
+        return _parseErrors.isEmpty ? Colors.green : Colors.orange;
+      case SmartScanState.error:
+        return Colors.red;
+    }
   }
   
   /// Reset state
   void reset() {
+    _state = SmartScanState.idle;
     _rawSmsList = [];
     _parsedSmsList = [];
+    _parseErrors = [];
     _errorMessage = null;
-    _isScanning = false;
     notifyListeners();
   }
 }
