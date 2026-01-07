@@ -12,6 +12,8 @@ class ParsedSms {
   final DateTime dateTime;       // Thời gian giao dịch
   final String content;          // Nội dung giao dịch (GRAB, SHOPEE...)
   final String rawText;          // Toàn bộ nội dung SMS gốc
+  final int? categoryId;         // ID của category (được gán bởi CategoryEngine)
+  final String? categoryName;    // Tên category (Di chuyển, Mua sắm, Ăn uống...)
 
   ParsedSms({
     required this.amount,
@@ -20,12 +22,14 @@ class ParsedSms {
     required this.dateTime,
     required this.content,
     required this.rawText,
+    this.categoryId,
+    this.categoryName,
   });
 
   @override
   String toString() {
     final typeStr = type == TransactionType.income ? '+' : '-';
-    return 'ParsedSms($typeStr${amount.toStringAsFixed(0)} VND, bank: $bank, date: $dateTime, content: $content)';
+    return 'ParsedSms($typeStr${amount.toStringAsFixed(0)} VND, bank: $bank, date: $dateTime, content: $content, category: $categoryName)';
   }
 
   /// Chuyển đổi sang Map (để lưu DB sau này)
@@ -37,6 +41,8 @@ class ParsedSms {
       'dateTime': dateTime.toIso8601String(),
       'content': content,
       'rawText': rawText,
+      'categoryId': categoryId,
+      'categoryName': categoryName,
     };
   }
 }

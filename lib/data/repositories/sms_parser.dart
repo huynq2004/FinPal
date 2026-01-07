@@ -1,8 +1,10 @@
 import '../../domain/models/raw_sms.dart';
 import '../../domain/models/parsed_sms.dart';
+import 'category_engine.dart';
 
 /// Class xử lý parse SMS ngân hàng thành dữ liệu có cấu trúc
 class SmsParser {
+  final CategoryEngine _categoryEngine = CategoryEngine();
   /// Parse một SMS thành ParsedSms
   /// Trả về null nếu không thể parse (SMS không đúng format ngân hàng)
   ParsedSms? parse(RawSms sms) {
@@ -31,6 +33,10 @@ class SmsParser {
       // Bước 5: Trích xuất nội dung giao dịch
       final content = _extractContent(body);
       
+      // Bước 6: Phân loại category bằng CategoryEngine
+      final categoryId = _categoryEngine.classify(content);
+      final categoryName = _categoryEngine.getCategoryNameById(categoryId);
+      
       final parsed = ParsedSms(
         amount: amount,
         type: type,
@@ -38,6 +44,8 @@ class SmsParser {
         dateTime: dateTime,
         content: content,
         rawText: body,
+        categoryId: categoryId,
+        categoryName: categoryName,
       );
       
       print('✅ [Parser] Parse thành công: $parsed');
