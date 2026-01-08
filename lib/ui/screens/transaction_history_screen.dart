@@ -10,7 +10,8 @@ class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
 
   @override
-  State<TransactionHistoryScreen> createState() => _TransactionHistoryScreenState();
+  State<TransactionHistoryScreen> createState() =>
+      _TransactionHistoryScreenState();
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
@@ -30,7 +31,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TransactionHistoryViewModel>().loadFakeData();
+      context.read<TransactionHistoryViewModel>().loadAllFromDb();
     });
   }
 
@@ -73,8 +74,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
             final cat = (tx.categoryName).toLowerCase();
             final bank = (tx.bank ?? '').toLowerCase();
             return note.contains(q) || cat.contains(q) || bank.contains(q);
-          }).toList()
-            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           // group by day labels
           final groups = <String, List<dynamic>>{};
@@ -99,9 +99,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Column(
                   children: [
-                    _SearchBox(
-                      onChanged: (v) => setState(() => _query = v),
-                    ),
+                    _SearchBox(onChanged: (v) => setState(() => _query = v)),
                     const SizedBox(height: 10),
                     _FilterPills(
                       value: _filter,
@@ -130,7 +128,11 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Padding(
-                                padding: const EdgeInsets.only(top: 10, bottom: 8, left: 2),
+                                padding: const EdgeInsets.only(
+                                  top: 10,
+                                  bottom: 8,
+                                  left: 2,
+                                ),
                                 child: Text(
                                   label,
                                   style: const TextStyle(
@@ -162,24 +164,37 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => TransactionDetailScreen(tx: tx),
+                                            builder: (_) =>
+                                                TransactionDetailScreen(tx: tx),
                                           ),
                                         );
                                       },
                                       child: Column(
                                         children: [
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 12,
+                                            ),
                                             child: _TxRow(
                                               isIncome: tx.type == 'income',
-                                              title: (tx.note ?? '').trim().isEmpty ? tx.categoryName : tx.note!,
+                                              title:
+                                                  (tx.note ?? '').trim().isEmpty
+                                                  ? tx.categoryName
+                                                  : tx.note!,
                                               subtitle: _subtitle(tx),
                                               amountText: _formatMoney(tx),
-                                              timeText: _timeFmt.format(tx.createdAt),
+                                              timeText: _timeFmt.format(
+                                                tx.createdAt,
+                                              ),
                                             ),
                                           ),
                                           if (i != list.length - 1)
-                                            const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                                            const Divider(
+                                              height: 1,
+                                              thickness: 1,
+                                              color: Color(0xFFF1F5F9),
+                                            ),
                                         ],
                                       ),
                                     );
@@ -286,7 +301,9 @@ class _FilterPills extends StatelessWidget {
         backgroundColor: const Color(0xFFF1F5F9),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(999),
-          side: BorderSide(color: selected ? Colors.transparent : const Color(0xFFE2E8F0)),
+          side: BorderSide(
+            color: selected ? Colors.transparent : const Color(0xFFE2E8F0),
+          ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       );
@@ -296,9 +313,15 @@ class _FilterPills extends StatelessWidget {
       children: [
         Container(key: const Key('chip_all'), child: pill('all', 'Tất cả')),
         const SizedBox(width: 10),
-        Container(key: const Key('chip_expense'), child: pill('expense', 'Chi tiêu')),
+        Container(
+          key: const Key('chip_expense'),
+          child: pill('expense', 'Chi tiêu'),
+        ),
         const SizedBox(width: 10),
-        Container(key: const Key('chip_income'), child: pill('income', 'Thu nhập')),
+        Container(
+          key: const Key('chip_income'),
+          child: pill('income', 'Thu nhập'),
+        ),
       ],
     );
   }
@@ -321,7 +344,9 @@ class _TxRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final amountColor = isIncome ? const Color(0xFF2ECC71) : const Color(0xFFFF5A5F);
+    final amountColor = isIncome
+        ? const Color(0xFF2ECC71)
+        : const Color(0xFFFF5A5F);
     final iconBg = isIncome ? const Color(0xFFEAFBF1) : const Color(0xFFFFEEF0);
 
     return Row(
@@ -331,7 +356,9 @@ class _TxRow extends StatelessWidget {
           height: 44,
           decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
           child: Icon(
-            isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+            isIncome
+                ? Icons.arrow_upward_rounded
+                : Icons.arrow_downward_rounded,
             color: amountColor,
           ),
         ),
@@ -370,12 +397,20 @@ class _TxRow extends StatelessWidget {
           children: [
             Text(
               amountText,
-              style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: amountColor),
+              style: TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w800,
+                color: amountColor,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               timeText,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF94A3B8),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -384,7 +419,7 @@ class _TxRow extends StatelessWidget {
   }
 }
 
-//  FAB custom: 
+//  FAB custom:
 class _BlueFab extends StatelessWidget {
   final VoidCallback onPressed;
   const _BlueFab({required this.onPressed});
@@ -392,7 +427,7 @@ class _BlueFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20), 
+      margin: const EdgeInsets.only(bottom: 20),
       width: 58,
       height: 58,
       decoration: BoxDecoration(

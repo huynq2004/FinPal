@@ -71,10 +71,11 @@ class TransactionHistoryViewModel extends ChangeNotifier {
       _transactions
         ..clear()
         ..addAll(transactions);
+      debugPrint('📋 TransactionHistory: Loaded ${_transactions.length} all transactions from DB');
       notifyListeners();
     } catch (e) {
       // Log error or notify UI
-      debugPrint('Error loading transactions from DB: $e');
+      debugPrint('❌ Error loading transactions from DB: $e');
       notifyListeners();
     }
   }
