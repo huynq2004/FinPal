@@ -50,7 +50,7 @@ class DashboardViewModel extends ChangeNotifier {
       }
 
       // Attach category names for display (fallback to 'Khác')
-      final enriched = txs.map((t) {
+      final List<Transaction> enriched = txs.map((t) {
         final name = (t.categoryName.isNotEmpty)
             ? t.categoryName
             : (_categoryNames[t.categoryId ?? -1] ?? 'Khác');

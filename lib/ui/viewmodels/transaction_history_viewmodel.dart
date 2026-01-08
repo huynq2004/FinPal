@@ -51,7 +51,7 @@ class TransactionHistoryViewModel extends ChangeNotifier {
   Future<void> loadFromDb(int year, int month) async {
     try {
       final repo = TransactionRepository(DatabaseProvider.instance);
-      final transactions = await repo.getTransactionsByMonth(year, month);
+      final List<Transaction> transactions = await repo.getTransactionsByMonth(year, month);
       _transactions
         ..clear()
         ..addAll(transactions);
@@ -67,7 +67,7 @@ class TransactionHistoryViewModel extends ChangeNotifier {
   Future<void> loadAllFromDb() async {
     try {
       final repo = TransactionRepository(DatabaseProvider.instance);
-      final transactions = await repo.getAllTransactions();
+      final List<Transaction> transactions = await repo.getAllTransactions();
       _transactions
         ..clear()
         ..addAll(transactions);
