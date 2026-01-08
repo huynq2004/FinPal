@@ -296,7 +296,7 @@ class _ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen> {
           child: Row(
             children: [
               SizedBox(
-                width: 30,
+                width: 60,
                 child: Text(
                   item.label,
                   style: const TextStyle(
@@ -305,6 +305,8 @@ class _ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen> {
                     color: Color(0xFF1F2937),
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 12),
