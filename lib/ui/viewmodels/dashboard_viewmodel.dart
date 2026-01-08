@@ -58,6 +58,7 @@ class DashboardViewModel extends ChangeNotifier {
       }).toList();
 
       // Recent transactions (already ordered DESC by repo)
+      
       _recent
         ..clear()
         ..addAll(enriched);

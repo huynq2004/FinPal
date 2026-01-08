@@ -183,7 +183,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 const SizedBox(height: 16),
 
-                /// ================= PHÂN LOẠI =================
+                /// ================== PHÂN LOẠI ==================
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Card(
