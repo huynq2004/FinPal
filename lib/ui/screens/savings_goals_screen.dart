@@ -6,7 +6,6 @@ import 'package:finpal/ui/viewmodels/savings_goals_viewmodel.dart';
 import 'package:finpal/domain/models/saving_goal.dart';
 import 'package:finpal/data/repositories/saving_goal_repository.dart';
 import 'package:finpal/ui/screens/create_saving_goal_screen.dart';
-import 'package:finpal/ui/screens/saving_goal_detail_screen.dart';
 
 class SavingsGoalsScreen extends StatelessWidget {
   const SavingsGoalsScreen({super.key});
@@ -27,7 +26,7 @@ class SavingsGoalsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (q_) {
+      create: (_) {
         final vm = SavingsGoalsViewModel(SavingGoalRepository());
         vm.loadGoals(); // ✅ load qua repository
         return vm;
@@ -163,17 +162,28 @@ class SavingsGoalsScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final SavingGoal goal = vm.goals[index];
                         final progress = vm.progressOf(goal).clamp(0.0, 1.0);
-                        final suggestion = vm.suggestionFor(goal);
+                        final suggestion = vm.calculateSuggestedWeekly(goal);
 
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            final vm = context.read<SavingsGoalsViewModel>();
+                            final deleted = await Navigator.push<bool>(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    SavingGoalDetailScreen(goal: goal),
+                                builder: (_) => ChangeNotifierProvider.value(
+                                  value: vm,
+                                  child: SavingGoalDetailScreen(goal: goal),
+                                ),
                               ),
                             );
+                            if (deleted == true && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Đã xóa mục tiêu.'),
+                                  backgroundColor: Color(0xFFFF5A5F),
+                                ),
+                              );
+                            }
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -220,89 +230,108 @@ class SavingsGoalsScreen extends StatelessWidget {
                                     ),
                                     Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.end,
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          _formatCurrency(goal.currentSaved),
+                                          goal.name,
                                           style: const TextStyle(
-                                            color: Color(0xFF2ECC71),
+                                            color: Color(0xFF0F172A),
                                             fontSize: 16,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          '${(progress * 100).toStringAsFixed(0)}%',
+                                          'Mục tiêu: ${_formatCurrency(goal.targetAmount)}',
                                           style: const TextStyle(
                                             color: Color(0xFF64748B),
-                                            fontSize: 12,
+                                            fontSize: 14,
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                // Progress bar background
-                                Container(
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF3F4F6),
-                                    borderRadius: BorderRadius.circular(999),
                                   ),
-                                  child: LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      return Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Container(
-                                          width:
-                                              constraints.maxWidth * progress,
-                                          decoration: const BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Color(0xFF3E8AFF),
-                                                Color(0xFF325DFF),
-                                              ],
-                                            ),
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(999),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEFF6FF),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      const Icon(
-                                        Icons.trending_up,
-                                        color: Color(0xFF3E8AFF),
-                                        size: 18,
+                                      Text(
+                                        _formatCurrency(goal.currentSaved),
+                                        style: const TextStyle(
+                                          color: Color(0xFF2ECC71),
+                                          fontSize: 16,
+                                        ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          'Gợi ý: ${_formatCurrency(suggestion)} / tuần',
-                                          style: const TextStyle(
-                                            color: Color(0xFF3E8AFF),
-                                          ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${(progress * 100).toStringAsFixed(0)}%',
+                                        style: const TextStyle(
+                                          color: Color(0xFF64748B),
+                                          fontSize: 12,
                                         ),
                                       ),
                                     ],
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              // Progress bar background
+                              Container(
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
-                              ],
-                            ),
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Container(
+                                        width: constraints.maxWidth * progress,
+                                        decoration: const BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Color(0xFF3E8AFF),
+                                              Color(0xFF325DFF),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(999),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.trending_up,
+                                      color: Color(0xFF3E8AFF),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Gợi ý: ${_formatCurrency(suggestion)} / tuần',
+                                        style: const TextStyle(
+                                          color: Color(0xFF3E8AFF),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },
@@ -330,13 +359,23 @@ class SavingsGoalsScreen extends StatelessWidget {
     );
 
     if (result != null && context.mounted) {
-      context.read<SavingsGoalsViewModel>().addGoal(
+      // Save to database via viewmodel
+      await context.read<SavingsGoalsViewModel>().addGoal(
         name: result.name,
         targetAmount: result.targetAmount,
         initialSaved: result.currentSaved,
         deadline: result.deadline,
         createdAt: result.createdAt,
       );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Đã tạo mục tiêu mới!'),
+            backgroundColor: Color(0xFF2ECC71),
+          ),
+        );
+      }
     }
   }
 }

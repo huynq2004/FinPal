@@ -58,7 +58,7 @@ class _EditSavingGoalScreenState extends State<EditSavingGoalScreen> {
     if (picked != null) setState(() => _deadline = picked);
   }
 
-  void _save() {
+  void _save() async {
     final name = _nameController.text.trim();
     final target = int.tryParse(_amountController.text.trim()) ?? 0;
 
@@ -75,8 +75,12 @@ class _EditSavingGoalScreenState extends State<EditSavingGoalScreen> {
       deadline: _deadline,
     );
 
-    context.read<SavingsGoalsViewModel>().updateGoal(updated);
-    Navigator.pop(context, updated);
+    // Save to database via viewmodel
+    await context.read<SavingsGoalsViewModel>().updateGoal(updated);
+
+    if (mounted) {
+      Navigator.pop(context, updated);
+    }
   }
 
   @override

@@ -91,17 +91,8 @@ class _ConfirmSavingScreenState extends State<ConfirmSavingScreen> {
     final inputAmount = int.tryParse(_amountController.text) ?? 0;
     if (inputAmount <= 0) return;
 
-    // TODO: Save to backend/database
-    Navigator.pop(context, {'amount': inputAmount, 'isWeekly': _isWeekly});
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Đã xác nhận tiết kiệm ${_formatCurrency(inputAmount)}đ/${_isWeekly ? "tuần" : "tháng"}!',
-        ),
-        backgroundColor: const Color(0xFF2ECC71),
-      ),
-    );
+    // Return the amount to parent screen for saving to database
+    Navigator.pop(context, inputAmount);
   }
 
   @override
