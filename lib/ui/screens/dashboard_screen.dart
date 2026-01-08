@@ -4,12 +4,14 @@ import 'package:intl/intl.dart';
 
 import '../viewmodels/dashboard_viewmodel.dart';
 import '../viewmodels/monthly_report_viewmodel.dart';
+import '../viewmodels/expense_analysis_viewmodel.dart';
 import '../widgets/pie_chart.dart';
 import '../widgets/transaction_tile.dart';
 import 'settings_screen.dart';
 import 'transaction_history_screen.dart';
 import 'manual_transaction_screen.dart';
 import 'monthly_report_screen.dart';
+import 'expense_analysis_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -205,7 +207,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               GestureDetector(
                                 onTap: () {
-                                  // TODO: Navigate to expense analysis screen
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChangeNotifierProvider(
+                                        create: (_) =>
+                                            ExpenseAnalysisViewModel(),
+                                        child: const ExpenseAnalysisScreen(),
+                                      ),
+                                    ),
+                                  );
                                 },
                                 child: const Text(
                                   'Phân tích chi tiêu',
