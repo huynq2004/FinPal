@@ -7,7 +7,7 @@ class DatabaseProvider {
   final bool testMode;
 
   DatabaseProvider._init({this.testMode = false});
-
+  
   /// Constructor cho test với in-memory database
   factory DatabaseProvider({bool testMode = false}) {
     if (testMode) {
@@ -34,12 +34,12 @@ class DatabaseProvider {
         },
       );
     }
-
+    
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'finpal.db');
     return await openDatabase(
       path,
-      version: 4,
+      version: 3,
       onCreate: (db, version) async {
         await createTables(db);
         await seedCategories(db);
@@ -70,17 +70,10 @@ class DatabaseProvider {
             )
           ''');
         }
-
-        // Migrate từ version 3 → 4: Add categoryName column
-        if (oldVersion < 4) {
-          await db.execute(
-            'ALTER TABLE transactions ADD COLUMN categoryName TEXT',
-          );
-        }
       },
     );
   }
-
+  
   /// Đóng database (dùng cho test)
   Future<void> close() async {
     final db = _database;

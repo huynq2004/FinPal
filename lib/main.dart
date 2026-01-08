@@ -14,10 +14,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Giữ DB init từ develop (Dev B / Dev C)
-  final db = await DatabaseProvider.instance.database;
-
-  // TODO: Uncomment to delete all test data for fresh start
-  // await db.delete('transactions');
+  await DatabaseProvider.instance.database;
 
   runApp(const FinPalApp());
 }

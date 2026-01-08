@@ -4,12 +4,14 @@ import 'package:intl/intl.dart';
 
 import '../viewmodels/dashboard_viewmodel.dart';
 import '../viewmodels/monthly_report_viewmodel.dart';
+import '../viewmodels/expense_analysis_viewmodel.dart';
 import '../widgets/pie_chart.dart';
 import '../widgets/transaction_tile.dart';
 import 'settings_screen.dart';
 import 'transaction_history_screen.dart';
 import 'manual_transaction_screen.dart';
 import 'monthly_report_screen.dart';
+import 'expense_analysis_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -183,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 const SizedBox(height: 16),
 
-                /// ================== PHÂN LOẠI ==================
+                /// ================= PHÂN LOẠI =================
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Card(
@@ -196,9 +198,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Phân loại chi tiêu',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Phân loại chi tiêu',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChangeNotifierProvider(
+                                        create: (_) =>
+                                            ExpenseAnalysisViewModel(),
+                                        child: const ExpenseAnalysisScreen(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  'Phân tích chi tiêu',
+                                  style: TextStyle(
+                                    color: Color(0xFF3E8AFF),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 12),
 

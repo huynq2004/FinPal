@@ -88,13 +88,13 @@ class Transaction {
   /// Thời gian giao dịch (dùng thống nhất toàn app)
   DateTime get time => createdAt;
 
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'amount': amount,
       'type': type,
       'category_id': categoryId,
-      'categoryName': categoryName,
       'bank': bank,
       'created_at': createdAt.toIso8601String(),
       'note': note,

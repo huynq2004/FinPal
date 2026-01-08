@@ -1,12 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:finpal/data/db/database_provider.dart';
-import 'package:finpal/data/repositories/categories_repository.dart';
-import 'package:finpal/data/repositories/transaction_repository.dart';
-import '../../domain/models/transaction.dart';
+
+import '../../data/db/database_provider.dart';
+import '../../data/repositories/transaction_repository.dart';
 import '../../domain/models/category_stat.dart';
+import '../../domain/models/transaction.dart';
 
 class DashboardViewModel extends ChangeNotifier {
+  final TransactionRepository _repo = TransactionRepository(
+    DatabaseProvider.instance,
+  );
+
   int totalIncome = 0;
   int totalExpense = 0;
   int get balance => totalIncome - totalExpense;
@@ -18,157 +22,117 @@ class DashboardViewModel extends ChangeNotifier {
   List<CategoryStat> _categories = [];
   List<CategoryStat> get categories => List.unmodifiable(_categories);
 
-  // Repositories
-  late final TransactionRepository _txRepo;
-
-  // Cached maps
-  Map<int, String> _categoryNames = {};
-  Map<String, Color> _categoryColors = {};
-
-  DashboardViewModel() {
-    _txRepo = TransactionRepository(DatabaseProvider.instance);
-  }
-
   String monthLabel(int year, int month) {
     return 'Tháng $month/$year';
   }
 
   Future<void> loadSummary(int year, int month) async {
+    totalIncome = 0;
+    totalExpense = 0;
+    _recent.clear();
+    _categories = [];
+
     try {
-      // Ensure category maps are ready
-      await _ensureCategoryMaps();
+      // Lấy toàn bộ lịch sử giao dịch
+      final txs = await _repo.getAllTransactions();
+      final catNameById = await _loadCategoryNames();
 
-      // Load transactions for the month (both manual and scanned SMS already persisted)
-      final txs = await _txRepo.getTransactionsByMonth(year, month);
-      debugPrint(
-        '🔍 Dashboard: Loaded ${txs.length} transactions for $year/$month',
-      );
       for (final tx in txs) {
-        debugPrint(
-          '  📄 ID=${tx.id}, amount=${tx.amount}, type=${tx.type}, cat=${tx.categoryName}, note=${tx.note}',
-        );
-      }
-
-      // Attach category names for display (fallback to 'Khác')
-      final List<Transaction> enriched = txs.map((t) {
-        final name = (t.categoryName.isNotEmpty)
-            ? t.categoryName
-            : (_categoryNames[t.categoryId ?? -1] ?? 'Khác');
-        return t.copyWith(categoryName: name);
-      }).toList();
-
-      // Recent transactions (already ordered DESC by repo)
-      
-      _recent
-        ..clear()
-        ..addAll(enriched);
-
-      // Compute totals
-      totalIncome = 0;
-      totalExpense = 0;
-      for (final t in enriched) {
-        if (t.type == 'income') {
-          totalIncome += t.amount;
+        if (tx.type == 'income') {
+          totalIncome += tx.amount;
         } else {
-          totalExpense += t.amount;
+          totalExpense += tx.amount;
         }
       }
-      debugPrint(
-        '💰 Dashboard: totalIncome=$totalIncome, totalExpense=$totalExpense',
-      );
 
-      // Compute category stats for expenses ONLY
-      final Map<String, int> byCategory = {};
-      for (final t in enriched) {
-        if (t.type != 'expense') continue;
-        final key = (t.categoryName.isNotEmpty)
-            ? t.categoryName
-            : (_categoryNames[t.categoryId ?? -1] ?? 'Khác');
-        byCategory[key] = (byCategory[key] ?? 0) + t.amount;
+      _recent.addAll(txs.take(3));
+
+      final Map<String, _CatAgg> catAgg = {};
+      for (final tx in txs.where((t) => t.type == 'expense')) {
+        final rawName = tx.categoryName.trim();
+        final resolvedName = rawName.isNotEmpty
+            ? rawName
+            : (tx.categoryId != null ? (catNameById[tx.categoryId] ?? '') : '');
+        final cleaned = _cleanName(resolvedName);
+        final displayName = cleaned.isNotEmpty ? cleaned : 'Khác';
+        final key = _nameKey(displayName);
+        final entry = catAgg.putIfAbsent(
+          key,
+          () => _CatAgg(displayName: displayName),
+        );
+        entry.amount += tx.amount;
       }
 
-      // Sort by amount desc
-      final entries = byCategory.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
+      final totalCat = catAgg.values.fold<int>(0, (sum, e) => sum + e.amount);
 
-      debugPrint(
-        '📊 Dashboard: Category breakdown: ${entries.map((e) => '${e.key}=${e.value}').join(", ")}',
-      );
+      _categories =
+          catAgg.values
+              .map(
+                (e) => CategoryStat(
+                  name: e.displayName,
+                  color: _stableColor(e.displayName),
+                  percent: totalCat == 0 ? 0.0 : e.amount / totalCat,
+                  amount: e.amount,
+                ),
+              )
+              .toList()
+            ..sort((a, b) => b.amount.compareTo(a.amount));
 
-      // Build CategoryStat list with percents and colors
-      final total = totalExpense == 0 ? 1 : totalExpense; // avoid div by zero
-      final fallbackPalette = <Color>[
-        const Color(0xFFFF6B6B),
-        const Color(0xFF4ECDC4),
-        const Color(0xFFFFD93D),
-        const Color(0xFF95E1D3),
-        const Color(0xFFC7CEEA),
-        const Color(0xFF3E8AFF),
-        const Color(0xFF325DFF),
-      ];
-      int colorIdx = 0;
-
-      _categories = entries.map((e) {
-        final name = e.key;
-        final amount = e.value;
-        final color =
-            _categoryColors[name] ??
-            fallbackPalette[colorIdx++ % fallbackPalette.length];
-        final percent = amount / total;
-        debugPrint(
-          '  → $name: $amount VND (${(percent * 100).toStringAsFixed(1)}%)',
-        );
-        return CategoryStat(
-          name: name,
-          color: color,
-          percent: percent,
-          amount: amount,
-        );
-      }).toList();
-
-      debugPrint(
-        '✅ Dashboard: Loaded ${_categories.length} expense categories',
-      );
       notifyListeners();
     } catch (e) {
-      // In case of any failure, keep state safe and notify
-      debugPrint('❌ Dashboard loadSummary error: $e');
+      if (kDebugMode) {
+        print('Dashboard loadSummary error: $e');
+      }
       notifyListeners();
     }
   }
+}
 
-  Future<void> _ensureCategoryMaps() async {
-    if (_categoryNames.isNotEmpty && _categoryColors.isNotEmpty) return;
+class _CatAgg {
+  _CatAgg({required this.displayName, this.amount = 0});
+  final String displayName;
+  int amount;
+}
 
+Future<Map<int, String>> _loadCategoryNames() async {
+  try {
     final db = await DatabaseProvider.instance.database;
-    final catRepo = CategoriesRepository(db);
-
-    // id -> name
-    _categoryNames = await catRepo.loadCategoryNames();
-
-    // name -> Color (parse from hex), with safe fallbacks
-    _categoryColors.clear();
-    final rows = await catRepo.getAllCategories();
+    final rows = await db.query('categories', columns: ['id', 'name']);
+    final map = <int, String>{};
     for (final r in rows) {
-      final name = r['name']?.toString() ?? '';
-      final hex = r['color']?.toString() ?? '';
-      if (name.isEmpty) continue;
-      _categoryColors[name] =
-          _parseHexColor(hex) ?? _categoryColors[name] ?? Colors.blueGrey;
+      final id = r['id'] is int
+          ? r['id'] as int
+          : int.tryParse(r['id'].toString()) ?? -1;
+      if (id < 0) continue;
+      final name = (r['name'] ?? '').toString();
+      if (name.isNotEmpty) map[id] = name;
     }
+    return map;
+  } catch (_) {
+    return {};
   }
+}
 
-  Color? _parseHexColor(String hex) {
-    if (hex.isEmpty) return null;
-    var value = hex.trim();
-    if (value.startsWith('#')) value = value.substring(1);
-    // Support RRGGBB or AARRGGBB
-    if (value.length == 6) {
-      value = 'FF$value';
-    }
-    if (value.length != 8) return null;
-    final intVal = int.tryParse(value, radix: 16);
-    if (intVal == null) return null;
-    return Color(intVal);
-  }
+Color _stableColor(String name) {
+  const palette = [
+    Color(0xFFFF6B6B),
+    Color(0xFF4ECDC4),
+    Color(0xFFFFD93D),
+    Color(0xFF95E1D3),
+    Color(0xFFC7CEEA),
+    Color(0xFF7AD1F7),
+    Color(0xFF9AE6B4),
+    Color(0xFF6B7280),
+  ];
+  final hash = name.toLowerCase().hashCode;
+  final idx = hash.abs() % palette.length;
+  return palette[idx];
+}
+
+String _cleanName(String name) {
+  return name.trim().replaceAll(RegExp(r'\s+'), ' ');
+}
+
+String _nameKey(String name) {
+  return _cleanName(name).toLowerCase();
 }

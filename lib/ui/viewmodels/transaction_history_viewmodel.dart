@@ -51,7 +51,7 @@ class TransactionHistoryViewModel extends ChangeNotifier {
   Future<void> loadFromDb(int year, int month) async {
     try {
       final repo = TransactionRepository(DatabaseProvider.instance);
-      final List<Transaction> transactions = await repo.getTransactionsByMonth(year, month);
+      final transactions = await repo.getTransactionsByMonth(year, month);
       _transactions
         ..clear()
         ..addAll(transactions);
@@ -67,15 +67,14 @@ class TransactionHistoryViewModel extends ChangeNotifier {
   Future<void> loadAllFromDb() async {
     try {
       final repo = TransactionRepository(DatabaseProvider.instance);
-      final List<Transaction> transactions = await repo.getAllTransactions();
+      final transactions = await repo.getAllTransactions();
       _transactions
         ..clear()
         ..addAll(transactions);
-      debugPrint('📋 TransactionHistory: Loaded ${_transactions.length} all transactions from DB');
       notifyListeners();
     } catch (e) {
       // Log error or notify UI
-      debugPrint('❌ Error loading transactions from DB: $e');
+      debugPrint('Error loading transactions from DB: $e');
       notifyListeners();
     }
   }
