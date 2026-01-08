@@ -196,9 +196,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Phân loại chi tiêu',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Phân loại chi tiêu',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  // TODO: Navigate to expense analysis screen
+                                },
+                                child: const Text(
+                                  'Phân tích chi tiêu',
+                                  style: TextStyle(
+                                    color: Color(0xFF3E8AFF),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 12),
 
