@@ -6,6 +6,10 @@ import 'package:finpal/ui/viewmodels/ai_coach_viewmodel.dart';
 import 'package:finpal/domain/models/coach_message.dart';
 import 'package:finpal/domain/models/ai_insight.dart';
 import 'package:finpal/data/repositories/ai_coach_repository.dart';
+import 'package:finpal/data/repositories/transaction_repository.dart';
+import 'package:finpal/data/repositories/budget_repository.dart';
+import 'package:finpal/data/services/analytics_service.dart';
+import 'package:finpal/data/db/database_provider.dart';
 import 'package:finpal/ui/screens/ai_insight_detail_screen.dart';
 
 class AiCoachScreen extends StatelessWidget {
@@ -37,8 +41,21 @@ class AiCoachScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) {
-        final vm = AiCoachViewModel(AiCoachRepository());
+        // Initialize real dependencies
+        final dbProvider = DatabaseProvider.instance;
+        final transactionRepo = TransactionRepository(dbProvider);
+        final budgetRepo = BudgetRepository(dbProvider);
+        final analyticsService = AnalyticsService(transactionRepo);
+        final repository = AiCoachRepository(analyticsService, budgetRepo);
+        
+        final vm = AiCoachViewModel(repository, analyticsService);
         vm.loadMessages();
+        
+        // Log basic insights to console
+        vm.loadBasicInsights().then((insights) {
+          print('📊 [AiCoachScreen] Loaded basic insights: $insights');
+        });
+        
         return vm;
       },
       child: Scaffold(
