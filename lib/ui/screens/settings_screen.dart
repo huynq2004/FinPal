@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import 'budget_management_screen.dart';
+import 'category_management_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -92,7 +93,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _simpleTile(
                             title: 'Quản lý danh mục',
                             subtitle: 'Tùy chỉnh danh mục cho giao dịch',
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const CategoryManagementScreen(),
+                                ),
+                              );
+                            },
                           ),
                           const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
                           _simpleTile(
