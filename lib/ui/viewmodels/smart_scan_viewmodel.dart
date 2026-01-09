@@ -4,10 +4,12 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../domain/models/raw_sms.dart';
 import '../../domain/models/parsed_sms.dart';
 import '../../data/repositories/sms_parser.dart';
+import '../../data/repositories/smart_scan_config.dart';
 
 /// Enum state cho quá trình Smart Scan
 enum SmartScanState {
   idle,              // Chưa bắt đầu quét
+  disabled,          // Smart Scan đang bị tắt
   checkingPermission, // Đang kiểm tra quyền SMS
   permissionDenied,   // Người dùng từ chối quyền
   scanning,           // Đang quét SMS từ inbox
@@ -30,6 +32,9 @@ class ParseError {
 class SmartScanViewModel extends ChangeNotifier {
   final Telephony _telephony = Telephony.instance;
   final SmsParser _parser = SmsParser();
+  final SmartScanConfig _config;
+  
+  SmartScanViewModel(this._config);
   
   // State
   SmartScanState _state = SmartScanState.idle;
@@ -44,6 +49,7 @@ class SmartScanViewModel extends ChangeNotifier {
   bool get isScanning => _state == SmartScanState.scanning || 
                          _state == SmartScanState.filtering || 
                          _state == SmartScanState.parsing;
+  bool get isDisabled => _state == SmartScanState.disabled;
   bool get hasPermission => _hasPermission;
   List<RawSms> get rawSmsList => _rawSmsList;
   List<ParsedSms> get parsedSmsList => _parsedSmsList;
@@ -98,6 +104,15 @@ class SmartScanViewModel extends ChangeNotifier {
   /// Hàm chính: Quét hộp thư SMS và lọc tin nhắn ngân hàng
   Future<void> scanInbox() async {
     try {
+      // Bước 0: Kiểm tra xem Smart Scan có được bật không
+      if (!_config.isSmartScanEnabled) {
+        _state = SmartScanState.disabled;
+        _errorMessage = 'Smart Scan đang tắt. Vui lòng bật trong Cài đặt.';
+        print('⚠️ [SmartScan] Smart Scan đang tắt - không thể quét');
+        notifyListeners();
+        return;
+      }
+      
       _state = SmartScanState.checkingPermission;
       _errorMessage = null;
       _parseErrors.clear();
@@ -330,6 +345,8 @@ class SmartScanViewModel extends ChangeNotifier {
     switch (_state) {
       case SmartScanState.idle:
         return 'Nhấn nút quét để bắt đầu';
+      case SmartScanState.disabled:
+        return 'Smart Scan đang tắt. Vui lòng bật trong Cài đặt.';
       case SmartScanState.checkingPermission:
         return 'Đang kiểm tra quyền truy cập SMS...';
       case SmartScanState.permissionDenied:
@@ -358,6 +375,8 @@ class SmartScanViewModel extends ChangeNotifier {
   Color getStatusColor() {
     switch (_state) {
       case SmartScanState.idle:
+        return Colors.grey;
+      case SmartScanState.disabled:
         return Colors.grey;
       case SmartScanState.checkingPermission:
       case SmartScanState.scanning:

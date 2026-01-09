@@ -188,7 +188,11 @@ class DatabaseProvider {
     ];
 
     for (final category in defaultCategories) {
-      await db.insert('categories', category, conflictAlgorithm: ConflictAlgorithm.ignore);
+      await db.insert(
+        'categories',
+        category,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
     }
   }
 }
