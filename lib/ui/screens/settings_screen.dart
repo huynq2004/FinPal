@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'sms_permission_screen.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/settings_viewmodel.dart';
+import 'budget_management_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -9,7 +11,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _autoSms = true;
 
   static const _bg = Color(0xFFF5F7FA);
   static const _primary = Color(0xFF3E8AFF);
@@ -21,176 +22,225 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        title: const Text('Cài đặt'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _maxCardWidth),
-            child: Column(
-              children: [
-                // ===== Card: SMS =====
-                _card(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // header: icon + title
-                      Row(
-                        children: const [
-                          Icon(Icons.phone_iphone, color: _primary),
-                          SizedBox(width: 10),
-                          Text(
-                            'Đọc SMS tự động',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: _textPrimary,
-                            ),
+    return Consumer<SettingsViewModel>(
+      builder: (context, viewModel, child) {
+        return Scaffold(
+          backgroundColor: _bg,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            elevation: 0,
+            title: const Text('Cài đặt'),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _maxCardWidth),
+                child: Column(
+                  children: [
+                    // ===== Card: Quản lý tài chính =====
+                    _card(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // header: icon + title
+                          Row(
+                            children: const [
+                              Icon(Icons.pie_chart_outline, color: _primary),
+                              SizedBox(width: 10),
+                              Text(
+                                'Quản lý tài chính',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: _textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 15),
+
+                          // divider
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0xFFE5E7EB),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          // Menu items
+                          _simpleTile(
+                            title: 'Quản lý hạn mức',
+                            subtitle: 'Đặt giới hạn chi tiêu cho từng danh mục',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const BudgetManagementScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+                          _simpleTile(
+                            title: 'Quản lý danh mục',
+                            subtitle: 'Tùy chỉnh danh mục cho giao dịch',
+                            onTap: () {},
+                          ),
+                          const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+                          _simpleTile(
+                            title: 'Tài khoản ngân hàng',
+                            subtitle: 'Quản lý tài khoản ngân hàng được kết nối',
+                            onTap: () {},
                           ),
                         ],
                       ),
+                    ),
 
-                      const SizedBox(height: 15),
+                    const SizedBox(height: 14),
 
-                      // divider mờ ngăn header và phần android
-                      const Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: Color(0xFFE5E7EB),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      // Android row
-                      Row(
+                    // ===== Card: SMS =====
+                    _card(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Expanded(
+                          // header: icon + title
+                          Row(
+                            children: const [
+                              Icon(Icons.phone_iphone, color: _primary),
+                              SizedBox(width: 10),
+                              Text(
+                                'Đọc SMS tự động',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: _textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 15),
+
+                          // divider
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0xFFE5E7EB),
+                          ),
+
+                          const SizedBox(height: 15),
+
+                          // Android SMS Toggle
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Đọc SMS tự động (Android)',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: _textPrimary,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Tự động quét tin nhắn ngân hàng',
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        color: _textSecondary,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: viewModel.isSmartScanEnabled,
+                                activeColor: _primary,
+                                onChanged: (value) {
+                                  viewModel.setSmartScanEnabled(value);
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // iOS info box
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              border: Border.all(color: const Color(0xFFDBEAFE)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Đọc SMS tự động (Android)',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: _textPrimary,
-                                  ),
+                                Row(
+                                  children: const [
+                                    Icon(Icons.info_outline, color: _primary, size: 18),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text.rich(
+                                        TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: 'iOS: ',
+                                              style: TextStyle(
+                                                color: _primary,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text: 'Không thể tự đọc SMS',
+                                              style: TextStyle(
+                                                color: _textPrimary,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Tự động quét tin nhắn ngân hàng',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    color: _textSecondary,
-                                    height: 1.2,
-                                  ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Do giới hạn của iOS, FinPal không thể tự động đọc tin nhắn SMS. Bạn có thể sử dụng các cách thay thế sau:',
+                                  style: TextStyle(color: _textSecondary, height: 1.35),
+                                ),
+                                const SizedBox(height: 12),
+                                _altRow(
+                                  icon: Icons.email_outlined,
+                                  title: 'Forward email sao kê ngân hàng',
+                                  subtitle: 'Gửi email thông báo giao dịch đến FinPal',
+                                ),
+                                const SizedBox(height: 12),
+                                _altRow(
+                                  icon: Icons.camera_alt_outlined,
+                                  title: 'Chụp màn hình thông báo',
+                                  subtitle: 'Sử dụng OCR để quét ảnh chụp màn hình',
                                 ),
                               ],
                             ),
-                          ),
-                          Switch(
-                            value: _autoSms,
-                            activeColor: _primary,
-                            onChanged: null, // placeholder, set bên dưới
                           ),
                         ],
                       ),
-
-                      // trick nhỏ: để switch dùng setState mà vẫn giữ const block phía trên dễ đọc
-                      Builder(
-                        builder: (context) {
-                          return Align(
-                            alignment: Alignment.topRight,
-                            child: Transform.translate(
-                              offset: const Offset(0, -52),
-                              child: Switch(
-                                value: _autoSms,
-                                activeColor: _primary,
-                                onChanged: (v) => setState(() => _autoSms = v),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 1),
-
-                      // iOS info box
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          border: Border.all(color: const Color(0xFFDBEAFE)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: const [
-                                Icon(Icons.info_outline, color: _primary, size: 18),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text.rich(
-                                    TextSpan(
-                                      children: [
-                                        TextSpan(
-                                          text: 'iOS: ',
-                                          style: TextStyle(
-                                            color: _primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        TextSpan(
-                                          text: 'Không thể tự đọc SMS',
-                                          style: TextStyle(
-                                            color: _textPrimary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Do giới hạn của iOS, FinPal không thể tự động đọc tin nhắn SMS. Bạn có thể sử dụng các cách thay thế sau:',
-                              style: TextStyle(color: _textSecondary, height: 1.35),
-                            ),
-                            const SizedBox(height: 12),
-                            _altRow(
-                              icon: Icons.email_outlined,
-                              title: 'Forward email sao kê ngân hàng',
-                              subtitle: 'Gửi email thông báo giao dịch đến FinPal',
-                            ),
-                            const SizedBox(height: 12),
-                            _altRow(
-                              icon: Icons.camera_alt_outlined,
-                              title: 'Chụp màn hình thông báo',
-                              subtitle: 'Sử dụng OCR để quét ảnh chụp màn hình',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
 
                 const SizedBox(height: 14),
 
@@ -235,12 +285,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 14),
 
-                // Commitment box (giữ nguyên)
+                // Commitment box
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFEFF6FF),
+                        Color(0xFFFAF5FF),
+                      ],
+                    ),
                     border: Border.all(color: const Color(0xFFDBEAFE)),
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -272,7 +329,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 14),
 
-                // Supported banks (white card)
+                // Supported banks
                 _card(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +368,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 14),
 
-                // Version card (white + centered + same width)
+                // Version card
                 _card(
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 6),
@@ -338,7 +395,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+      },
+    );
   }
+
 
   Widget _card({required Widget child}) {
     return Container(

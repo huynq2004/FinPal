@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../domain/models/transaction.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../../data/db/database_provider.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
-  final Transaction tx;
+  final int transactionId;
 
-  const TransactionDetailScreen({super.key, required this.tx});
+  const TransactionDetailScreen({super.key, required this.transactionId});
 
   @override
   State<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
@@ -13,7 +15,12 @@ class TransactionDetailScreen extends StatefulWidget {
 
 class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   late final TextEditingController _noteController;
-  late String _category;
+  late final TransactionRepository _repository;
+  
+  Transaction? _transaction;
+  bool _isLoading = true;
+  String? _errorMessage;
+  String _category = 'Di chuyển';
 
   final List<String> _categories = [
     'Di chuyển',
@@ -27,11 +34,42 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _noteController = TextEditingController(text: widget.tx.note ?? '');
+    _noteController = TextEditingController();
+    _repository = TransactionRepository(DatabaseProvider.instance);
+    _loadTransaction();
+  }
 
-    // ✅ init category an toàn
-    final initCat = widget.tx.categoryName.trim();
-    _category = initCat.isNotEmpty ? initCat : _categories.first;
+  Future<void> _loadTransaction() async {
+    try {
+      final transaction = await _repository.getTransactionById(widget.transactionId);
+      
+      if (!mounted) return;
+      
+      if (transaction == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Không tìm thấy giao dịch';
+        });
+        return;
+      }
+
+      setState(() {
+        _transaction = transaction;
+        _noteController.text = transaction.note ?? '';
+        
+        // ✅ init category an toàn
+        final initCat = transaction.categoryName.trim();
+        _category = initCat.isNotEmpty ? initCat : _categories.first;
+        
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Lỗi khi tải dữ liệu: $e';
+      });
+    }
   }
 
   @override
@@ -73,22 +111,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat.decimalPattern('vi');
-    final dateFmt = DateFormat('dd/MM/yyyy');
-    final timeFmt = DateFormat('HH:mm');
-
-    final tx = widget.tx;
-    final isIncome = tx.type == 'income';
-
-    // ✅ FIX: tiền hiển thị đúng (abs + sign)
-    final num amountAbs = (tx.amount as num).abs();
-    final sign = isIncome ? '+' : '-';
-
-    // ✅ FIX: màu đúng theo loại giao dịch
-    final amountColor = isIncome ? const Color(0xFF22C55E) : const Color(0xFFFF5A5F);
-    final pillBg = isIncome ? const Color(0xFFEAFBF1) : const Color(0xFFFFEEF0);
-    final pillText = isIncome ? const Color(0xFF22C55E) : const Color(0xFFFF5A5F);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -112,13 +134,152 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           child: Divider(height: 0.67, thickness: 0.67, color: Color(0xFFF3F4F6)),
         ),
       ),
+      body: _buildBody(),
+      bottomNavigationBar: (_transaction != null && !_isLoading)
+          ? Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Save button (gradient)
+                  Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF3E8AFF), Color(0xFF325DFF)]),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 6)),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        key: const Key('tx_detail_save'),
+                        onTap: () async {
+                          final updated = _transaction!.copyWith(
+                            note: _noteController.text,
+                            categoryName: _category,
+                          );
+                          await _repository.updateTransaction(updated);
+                          if (!mounted) return;
+                          Navigator.pop(context, updated);
+                        },
+                        borderRadius: BorderRadius.circular(14),
+                        child: const Center(
+                          child: Text('Lưu thay đổi', style: TextStyle(color: Colors.white, fontSize: 16)),
+                        ),
+                      ),
+                    ),
+                  ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  const SizedBox(height: 12),
+
+                  // Delete button (pale red)
+                  Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEEDEE),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        key: const Key('tx_detail_delete'),
+                        onTap: () async {
+                          await _repository.deleteTransaction(_transaction!.id!);
+                          if (!mounted) return;
+                          Navigator.pop(context, {'deleted': true, 'tx': _transaction});
+                        },
+                        borderRadius: BorderRadius.circular(14),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.delete, color: Color(0xFFFF5A5F)),
+                            SizedBox(width: 8),
+                            Text('Xóa giao dịch', style: TextStyle(color: Color(0xFFFF5A5F), fontSize: 16)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF3E8AFF),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // ✅ Amount Card (BỎ Stack để không bị chèn lên nhau)
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Color(0xFFFF5A5F),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Quay lại'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_transaction == null) {
+      return const Center(
+        child: Text('Không có dữ liệu'),
+      );
+    }
+
+    return _buildTransactionDetail(_transaction!);
+  }
+
+  Widget _buildTransactionDetail(Transaction tx) {
+    final fmt = NumberFormat.decimalPattern('vi');
+    final dateFmt = DateFormat('dd/MM/yyyy');
+    final timeFmt = DateFormat('HH:mm');
+
+    final isIncome = tx.type == 'income';
+
+    // ✅ FIX: tiền hiển thị đúng (abs + sign)
+    final num amountAbs = (tx.amount as num).abs();
+    final sign = isIncome ? '+' : '-';
+
+    // ✅ FIX: màu đúng theo loại giao dịch
+    final amountColor = isIncome ? const Color(0xFF22C55E) : const Color(0xFFFF5A5F);
+    final pillBg = isIncome ? const Color(0xFFEAFBF1) : const Color(0xFFFFEEF0);
+    final pillText = isIncome ? const Color(0xFF22C55E) : const Color(0xFFFF5A5F);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+            // ✅ Amount Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
@@ -204,7 +365,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
             const SizedBox(height: 16),
 
-            // Classification Card (giữ nguyên như bạn)
+            // Classification Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
@@ -275,77 +436,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               ),
             ),
 
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
-
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Save button (gradient)
-            Container(
-              width: double.infinity,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF3E8AFF), Color(0xFF325DFF)]),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 6)),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: const Key('tx_detail_save'),
-                  onTap: () {
-                    final updated = tx.copyWith(
-                      note: _noteController.text,
-                      categoryName: _category,
-                    );
-                    Navigator.pop(context, updated);
-                  },
-                  borderRadius: BorderRadius.circular(14),
-                  child: const Center(
-                    child: Text('Lưu thay đổi', style: TextStyle(color: Colors.white, fontSize: 16)),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Delete button (pale red)
-            Container(
-              width: double.infinity,
-              height: 56,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEEDEE),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: const Key('tx_detail_delete'),
-                  onTap: () {
-                    Navigator.pop(context, {'deleted': true, 'tx': tx});
-                  },
-                  borderRadius: BorderRadius.circular(14),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.delete, color: Color(0xFFFF5A5F)),
-                      SizedBox(width: 8),
-                      Text('Xóa giao dịch', style: TextStyle(color: Color(0xFFFF5A5F), fontSize: 16)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          const SizedBox(height: 100),
+        ],
       ),
     );
   }

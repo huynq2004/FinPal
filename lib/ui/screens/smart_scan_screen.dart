@@ -65,20 +65,6 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
                             child: _buildTransactionList(viewModel),
                           ),
                         
-                        // Error Message
-                        if (viewModel.errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              viewModel.errorMessage!,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 14,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        
                         const SizedBox(height: 32),
                       ],
                     ),
@@ -92,7 +78,7 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: viewModel.isScanning ? null : () {
+                      onPressed: (viewModel.isScanning || viewModel.isDisabled) ? null : () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const SmartScanResultsScreen(),
@@ -107,9 +93,11 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
                         ),
                       ),
                       child: Text(
-                        viewModel.isScanning 
-                          ? 'Đang quét...' 
-                          : 'Xem kết quả (${viewModel.rawSmsList.length} SMS)',
+                        viewModel.isDisabled
+                          ? 'Smart Scan đang tắt'
+                          : (viewModel.isScanning 
+                            ? 'Đang quét...' 
+                            : 'Xem kết quả (${viewModel.rawSmsList.length} SMS)'),
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Colors.white,
                           fontSize: 16,
@@ -128,6 +116,70 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
   }
 
   Widget _buildScanningSection(SmartScanViewModel viewModel) {
+    // Nếu Smart Scan bị tắt, hiển thị thông báo đặc biệt
+    if (viewModel.isDisabled) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Disabled icon
+          Container(
+            width: 128,
+            height: 128,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF9CA3AF), Color(0xFF6B7280)],
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF9CA3AF).withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.block,
+              size: 60,
+              color: Colors.white,
+            ),
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Disabled status text
+          Text(
+            'Smart Scan đang tắt',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF0F172A),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Instruction text
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'Vui lòng bật Smart Scan trong Cài đặt để sử dụng tính năng quét SMS tự động',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      );
+    }
+    
+    // UI bình thường khi Smart Scan được bật
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
