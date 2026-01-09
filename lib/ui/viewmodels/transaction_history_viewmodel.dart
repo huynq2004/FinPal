@@ -8,6 +8,39 @@ class TransactionHistoryViewModel extends ChangeNotifier {
 
   List<Transaction> get transactions => List.unmodifiable(_transactions);
 
+  /// Load transactions from database for a specific month
+  Future<void> loadFromDb(int year, int month) async {
+    try {
+      final repo = TransactionRepository(DatabaseProvider.instance);
+      final transactions = await repo.getTransactionsByMonth(year, month);
+      _transactions
+        ..clear()
+        ..addAll(transactions);
+      notifyListeners();
+    } catch (e) {
+      // Log error or notify UI
+      debugPrint('Error loading transactions from DB: $e');
+      notifyListeners();
+    }
+  }
+
+  /// Reload all transactions from database
+  Future<void> loadAllFromDb() async {
+    try {
+      final repo = TransactionRepository(DatabaseProvider.instance);
+      final transactions = await repo.getAllTransactions();
+      _transactions
+        ..clear()
+        ..addAll(transactions);
+      notifyListeners();
+    } catch (e) {
+      // Log error or notify UI
+      debugPrint('Error loading transactions from DB: $e');
+      notifyListeners();
+    }
+  }
+
+  /// ONLY FOR TESTING: Load fake data
   Future<void> loadFakeData() async {
     _transactions
       ..clear()
@@ -45,37 +78,5 @@ class TransactionHistoryViewModel extends ChangeNotifier {
       ]);
 
     notifyListeners();
-  }
-
-  /// Load transactions from database for a specific month
-  Future<void> loadFromDb(int year, int month) async {
-    try {
-      final repo = TransactionRepository(DatabaseProvider.instance);
-      final transactions = await repo.getTransactionsByMonth(year, month);
-      _transactions
-        ..clear()
-        ..addAll(transactions);
-      notifyListeners();
-    } catch (e) {
-      // Log error or notify UI
-      debugPrint('Error loading transactions from DB: $e');
-      notifyListeners();
-    }
-  }
-
-  /// Reload all transactions from database
-  Future<void> loadAllFromDb() async {
-    try {
-      final repo = TransactionRepository(DatabaseProvider.instance);
-      final transactions = await repo.getAllTransactions();
-      _transactions
-        ..clear()
-        ..addAll(transactions);
-      notifyListeners();
-    } catch (e) {
-      // Log error or notify UI
-      debugPrint('Error loading transactions from DB: $e');
-      notifyListeners();
-    }
   }
 }

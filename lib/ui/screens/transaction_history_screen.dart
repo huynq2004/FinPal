@@ -30,7 +30,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TransactionHistoryViewModel>().loadFakeData();
+      // Load transactions for current month
+      final now = DateTime.now();
+      context.read<TransactionHistoryViewModel>().loadFromDb(now.year, now.month);
     });
   }
 
@@ -158,13 +160,18 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
                                     return InkWell(
                                       borderRadius: BorderRadius.circular(16),
-                                      onTap: () {
-                                        Navigator.push(
+                                      onTap: () async {
+                                        final result = await Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => TransactionDetailScreen(tx: tx),
+                                            builder: (_) => TransactionDetailScreen(transactionId: tx.id!),
                                           ),
                                         );
+                                        // Reload if transaction was updated or deleted
+                                        if (result != null && mounted) {
+                                          final now = DateTime.now();
+                                          context.read<TransactionHistoryViewModel>().loadFromDb(now.year, now.month);
+                                        }
                                       },
                                       child: Column(
                                         children: [
@@ -200,10 +207,15 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       // ✅ FAB mới: tròn + gradient + shadow + nâng cao lên
       floatingActionButton: _BlueFab(
         onPressed: () async {
-          await Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ManualTransactionScreen()),
           );
+          // Reload transactions sau khi thêm mới thành công
+          if (result == true && mounted) {
+            final now = DateTime.now();
+            context.read<TransactionHistoryViewModel>().loadFromDb(now.year, now.month);
+          }
         },
       ),
     );

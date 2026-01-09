@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finpal/ui/viewmodels/manual_transaction_viewmodel.dart';
+import 'package:finpal/data/repositories/transaction_repository.dart';
+import 'package:finpal/data/db/database_provider.dart';
 
 class ManualTransactionScreen extends StatelessWidget {
   const ManualTransactionScreen({super.key});
@@ -45,25 +47,25 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
     'Tiền mặt',
   ];
 
-	@override
-	void dispose() {
-		_amountController.dispose();
-		_descriptionController.dispose();
-		_noteController.dispose();
-		super.dispose();
-	}
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _descriptionController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
 
-	@override
-	void initState() {
-		super.initState();
-		// Load categories from DB via ViewModel after widget is initialized
-		Future.microtask(() {
-			try {
-				final vm = context.read<ManualTransactionViewModel>();
-				vm.loadCategories();
-			} catch (_) {}
-		});
-	}
+  @override
+  void initState() {
+    super.initState();
+    // Load categories from DB via ViewModel after widget is initialized
+    Future.microtask(() {
+      try {
+        final vm = context.read<ManualTransactionViewModel>();
+        vm.loadCategories();
+      } catch (_) {}
+    });
+  }
 
   Future<void> _pickDate(
     BuildContext context,
@@ -109,6 +111,46 @@ class _ManualTransactionFormState extends State<_ManualTransactionForm> {
             ),
             centerTitle: false,
             actions: [
+              // TEMP DEBUG: Dump all transactions to console
+              IconButton(
+                tooltip: 'Debug: Dump transactions',
+                icon: const Icon(Icons.bug_report, color: Color(0xFF64748B)),
+                onPressed: () async {
+                  try {
+                    final repo = TransactionRepository(
+                      DatabaseProvider.instance,
+                    );
+                    final txs = await repo.getAllTransactions();
+                    // Print structured dump to console
+                    // ignore: avoid_print
+                    print('===== TRANSACTION DUMP: count=${txs.length} =====');
+                    for (var i = 0; i < txs.length; i++) {
+                      final t = txs[i];
+                      // ignore: avoid_print
+                      print(
+                        '[#${i + 1}] id=${t.id} | amount=${t.amount} | type=${t.type} | catId=${t.categoryId} | catName=${t.categoryName} | bank=${t.bank} | time=${t.createdAt.toIso8601String()} | note=${t.note} | source=${t.source}',
+                      );
+                    }
+                    // ignore: avoid_print
+                    print('===== END TRANSACTION DUMP =====');
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Đã in ${txs.length} giao dịch ra console',
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Dump lỗi: ${e.toString()}')),
+                      );
+                    }
+                  }
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.close, color: Color(0xFF64748B)),
                 onPressed: () => Navigator.of(context).pop(),

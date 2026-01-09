@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/smart_scan_viewmodel.dart';
 import 'smart_scan_results_screen.dart';
 
 class SmartScanScreen extends StatefulWidget {
@@ -9,95 +11,175 @@ class SmartScanScreen extends StatefulWidget {
 }
 
 class _SmartScanScreenState extends State<SmartScanScreen> {
-  bool _isScanning = true;
+  @override
+  void initState() {
+    super.initState();
+    // Tự động quét SMS khi màn hình được tải
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SmartScanViewModel>().scanInbox();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.only(left: 24, right: 24, top: 24),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Smart Scan',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xFF0F172A),
-                  ),
-                ),
-              ),
-            ),
-            
-            // Main Content
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    
-                    // Scanning Animation Section
-                    _buildScanningSection(),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Transaction List
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: _buildTransactionList(),
-                    ),
-                    
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Results Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SmartScanResultsScreen(),
+    return Consumer<SmartScanViewModel>(
+      builder: (context, viewModel, child) {
+        return Scaffold(
+          backgroundColor: const Color(0xFFF5F7FA),
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.only(left: 24, right: 24, top: 24),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Smart Scan',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF0F172A),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3E8AFF),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    'Xem kết quả (Demo)',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
-              ),
+                
+                // Main Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        
+                        // Scanning Animation Section
+                        _buildScanningSection(viewModel),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Transaction List
+                        if (!viewModel.isScanning && viewModel.rawSmsList.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: _buildTransactionList(viewModel),
+                          ),
+                        
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Results Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: (viewModel.isScanning || viewModel.isDisabled) ? null : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SmartScanResultsScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3E8AFF),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        viewModel.isDisabled
+                          ? 'Smart Scan đang tắt'
+                          : (viewModel.isScanning 
+                            ? 'Đang quét...' 
+                            : 'Xem kết quả (${viewModel.rawSmsList.length} SMS)'),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildScanningSection() {
+  Widget _buildScanningSection(SmartScanViewModel viewModel) {
+    // Nếu Smart Scan bị tắt, hiển thị thông báo đặc biệt
+    if (viewModel.isDisabled) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Disabled icon
+          Container(
+            width: 128,
+            height: 128,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF9CA3AF), Color(0xFF6B7280)],
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF9CA3AF).withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.block,
+              size: 60,
+              color: Colors.white,
+            ),
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Disabled status text
+          Text(
+            'Smart Scan đang tắt',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF0F172A),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Instruction text
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'Vui lòng bật Smart Scan trong Cài đặt để sử dụng tính năng quét SMS tự động',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      );
+    }
+    
+    // UI bình thường khi Smart Scan được bật
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -124,7 +206,7 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
             alignment: Alignment.center,
             children: [
               // Animated outer ring
-              if (_isScanning)
+              if (viewModel.isScanning)
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0, end: 1),
                   duration: const Duration(seconds: 2),
@@ -135,10 +217,8 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
                     );
                   },
                   onEnd: () {
-                    if (_isScanning) {
-                      setState(() {
-                        _isScanning = _isScanning;
-                      });
+                    if (viewModel.isScanning) {
+                      setState(() {});
                     }
                   },
                   child: Container(
@@ -154,15 +234,21 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
                   ),
                 ),
               
-              // Center loading circle
-              SizedBox(
-                width: 60,
-                height: 60,
-                child: CircularProgressIndicator(
-                  strokeWidth: 4,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
+              // Center icon/loading
+              viewModel.isScanning
+                ? const SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 4,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(
+                    Icons.check_circle,
+                    size: 60,
+                    color: Colors.white,
+                  ),
             ],
           ),
         ),
@@ -171,7 +257,9 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
         
         // Status Text
         Text(
-          'Đang quét tin nhắn ngân hàng...',
+          viewModel.isScanning 
+            ? 'Đang quét tin nhắn ngân hàng...'
+            : 'Quét hoàn tất!',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontSize: 16,
             fontWeight: FontWeight.w400,
@@ -184,7 +272,7 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
         
         // Detected transactions count
         Text(
-          'Đã phát hiện 12 giao dịch',
+          'Đã phát hiện ${viewModel.rawSmsList.length} giao dịch',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontSize: 16,
             color: const Color(0xFF64748B),
@@ -196,27 +284,26 @@ class _SmartScanScreenState extends State<SmartScanScreen> {
     );
   }
 
-  Widget _buildTransactionList() {
+  Widget _buildTransactionList(SmartScanViewModel viewModel) {
+    // Hiển thị tối đa 3 SMS gần nhất
+    final displayCount = viewModel.rawSmsList.length > 3 ? 3 : viewModel.rawSmsList.length;
+    
     return Column(
-      children: [
-        _buildTransactionCard(
-          bankName: 'Vietcombank',
-          amount: '-55.000 VND',
-          details: 'Bien dong so du TK 001...: -55.000 VND...',
-        ),
-        const SizedBox(height: 12),
-        _buildTransactionCard(
-          bankName: 'Techcombank',
-          amount: '-120.000 VND',
-          details: 'Bien dong so du TK 190...: -120.000 VND...',
-        ),
-      ],
+      children: List.generate(displayCount, (index) {
+        final sms = viewModel.rawSmsList[index];
+        return Padding(
+          padding: EdgeInsets.only(bottom: index < displayCount - 1 ? 12 : 0),
+          child: _buildTransactionCard(
+            bankName: sms.address,
+            details: sms.body,
+          ),
+        );
+      }),
     );
   }
 
   Widget _buildTransactionCard({
     required String bankName,
-    required String amount,
     required String details,
   }) {
     return Container(
