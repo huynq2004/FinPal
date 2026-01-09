@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/settings_viewmodel.dart';
+import 'budget_management_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -43,7 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 constraints: const BoxConstraints(maxWidth: _maxCardWidth),
                 child: Column(
                   children: [
-                    // ===== Card: Smart Scan =====
+                    // ===== Card: Quản lý tài chính =====
                     _card(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,10 +52,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           // header: icon + title
                           Row(
                             children: const [
-                              Icon(Icons.settings_suggest, color: _primary),
+                              Icon(Icons.pie_chart_outline, color: _primary),
                               SizedBox(width: 10),
                               Text(
-                                'Smart Scan',
+                                'Quản lý tài chính',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
@@ -73,75 +74,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: Color(0xFFE5E7EB),
                           ),
 
-                          const SizedBox(height: 15),
+                          const SizedBox(height: 6),
 
-                          // Smart Scan Toggle
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Bật Smart Scan',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: _textPrimary,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Tự động quét và phân loại tin nhắn ngân hàng',
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        color: _textSecondary,
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                  ],
+                          // Menu items
+                          _simpleTile(
+                            title: 'Quản lý hạn mức',
+                            subtitle: 'Đặt giới hạn chi tiêu cho từng danh mục',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const BudgetManagementScreen(),
                                 ),
-                              ),
-                              Switch(
-                                value: viewModel.isSmartScanEnabled,
-                                activeColor: _primary,
-                                onChanged: (value) {
-                                  viewModel.setSmartScanEnabled(value);
-                                },
-                              ),
-                            ],
+                              );
+                            },
                           ),
-
-                          const SizedBox(height: 8),
-
-                          // Info box khi tắt Smart Scan
-                          if (!viewModel.isSmartScanEnabled)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF4ED),
-                                border: Border.all(color: const Color(0xFFFFE4D6)),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.info_outline, color: Color(0xFFFF6B35), size: 18),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Smart Scan đã tắt. Bạn vẫn có thể nhập giao dịch thủ công.',
-                                      style: TextStyle(
-                                        color: Color(0xFF664D03),
-                                        fontSize: 12.5,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+                          _simpleTile(
+                            title: 'Quản lý danh mục',
+                            subtitle: 'Tùy chỉnh danh mục cho giao dịch',
+                            onTap: () {},
+                          ),
+                          const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+                          _simpleTile(
+                            title: 'Tài khoản ngân hàng',
+                            subtitle: 'Quản lý tài khoản ngân hàng được kết nối',
+                            onTap: () {},
+                          ),
                         ],
                       ),
                     ),
@@ -171,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                           const SizedBox(height: 15),
 
-                          // divider mờ ngăn header và phần android
+                          // divider
                           const Divider(
                             height: 1,
                             thickness: 1,
@@ -180,14 +138,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                           const SizedBox(height: 15),
 
-                          // Android info text
-                          const Text(
-                            'Trên Android, Smart Scan có thể tự động đọc tin nhắn SMS từ ngân hàng để ghi nhận giao dịch. Quyền SMS chỉ được yêu cầu khi bạn bật Smart Scan.',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: _textSecondary,
-                              height: 1.4,
-                            ),
+                          // Android SMS Toggle
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Đọc SMS tự động (Android)',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: _textPrimary,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Tự động quét tin nhắn ngân hàng',
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        color: _textSecondary,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: viewModel.isSmartScanEnabled,
+                                activeColor: _primary,
+                                onChanged: (value) {
+                                  viewModel.setSmartScanEnabled(value);
+                                },
+                              ),
+                            ],
                           ),
 
                           const SizedBox(height: 12),
@@ -299,12 +285,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 14),
 
-                // Commitment box (giữ nguyên)
+                // Commitment box
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFEFF6FF),
+                        Color(0xFFFAF5FF),
+                      ],
+                    ),
                     border: Border.all(color: const Color(0xFFDBEAFE)),
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -336,7 +329,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 14),
 
-                // Supported banks (white card)
+                // Supported banks
                 _card(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,7 +368,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 14),
 
-                // Version card (white + centered + same width)
+                // Version card
                 _card(
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 6),
