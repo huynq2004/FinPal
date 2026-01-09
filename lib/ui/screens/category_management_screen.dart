@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finpal/ui/viewmodels/category_management_viewmodel.dart';
 import 'package:finpal/domain/models/category.dart';
+import 'package:finpal/data/db/database_provider.dart';
+import 'package:finpal/data/repositories/categories_repository.dart';
+import 'package:sqflite/sqflite.dart';
 
 class CategoryManagementScreen extends StatelessWidget {
   const CategoryManagementScreen({super.key});
@@ -30,49 +33,63 @@ class CategoryManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) {
-        final vm = CategoryManagementViewModel();
-        vm.loadCategories();
-        return vm;
-      },
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FA),
-        body: SafeArea(
-          child: Consumer<CategoryManagementViewModel>(
-            builder: (context, vm, child) {
-              return Column(
-                children: [
-                  // Header
-                  _buildHeader(context),
+    return FutureBuilder<Database>(
+      future: DatabaseProvider.instance.database,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-                  // Tab selector
-                  _buildTabs(context, vm),
+        final db = snapshot.data!;
+        final repository = CategoriesRepository(db);
 
-                  // Add category button
-                  _buildAddButton(context),
+        return ChangeNotifierProvider(
+          create: (_) {
+            final vm = CategoryManagementViewModel(repository);
+            vm.loadCategories();
+            return vm;
+          },
+          child: Scaffold(
+            backgroundColor: const Color(0xFFF5F7FA),
+            body: SafeArea(
+              child: Consumer<CategoryManagementViewModel>(
+                builder: (context, vm, child) {
+                  return Column(
+                    children: [
+                      // Header
+                      _buildHeader(context),
 
-                  // Category list
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                      child: Column(
-                        children: [
-                          _buildListHeader(vm),
-                          const SizedBox(height: 8),
-                          _buildCategoryList(context, vm),
-                          const SizedBox(height: 16),
-                          _buildInfoBanner(),
-                        ],
+                      // Tab selector
+                      _buildTabs(context, vm),
+
+                      // Add category button
+                      _buildAddButton(context),
+
+                      // Category list
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                          child: Column(
+                            children: [
+                              _buildListHeader(vm),
+                              const SizedBox(height: 8),
+                              _buildCategoryList(context, vm),
+                              const SizedBox(height: 16),
+                              _buildInfoBanner(),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              );
-            },
+                    ],
+                  );
+                },
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

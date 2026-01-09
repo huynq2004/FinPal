@@ -2,8 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:finpal/domain/models/category.dart';
+import 'package:finpal/data/repositories/categories_repository.dart';
 
 class CategoryManagementViewModel extends ChangeNotifier {
+  final CategoriesRepository _repository;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  CategoryManagementViewModel(this._repository);
   CategoryType _selectedType = CategoryType.expense;
   List<Category> _expenseCategories = [];
   List<Category> _incomeCategories = [];
@@ -12,116 +18,95 @@ class CategoryManagementViewModel extends ChangeNotifier {
   List<Category> get categories => _selectedType == CategoryType.expense
       ? _expenseCategories
       : _incomeCategories;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
-  void loadCategories() {
-    // Sample expense categories
-    _expenseCategories = [
-      const Category(
-        id: '1',
-        name: 'Ăn uống',
-        emoji: '🍜',
-        backgroundColor: 'rgba(255,107,107,0.13)',
-        type: CategoryType.expense,
-        isDefault: true,
-        transactionCount: 45,
-      ),
-      const Category(
-        id: '2',
-        name: 'Mua sắm',
-        emoji: '🛍️',
-        backgroundColor: 'rgba(78,205,196,0.13)',
-        type: CategoryType.expense,
-        isDefault: true,
-        transactionCount: 23,
-      ),
-      const Category(
-        id: '3',
-        name: 'Di chuyển',
-        emoji: '🚗',
-        backgroundColor: 'rgba(255,217,61,0.13)',
-        type: CategoryType.expense,
-        isDefault: true,
-        transactionCount: 38,
-      ),
-      const Category(
-        id: '4',
-        name: 'Giải trí',
-        emoji: '🎮',
-        backgroundColor: 'rgba(149,225,211,0.13)',
-        type: CategoryType.expense,
-        isDefault: true,
-        transactionCount: 12,
-      ),
-      const Category(
-        id: '5',
-        name: 'Hóa đơn',
-        emoji: '📄',
-        backgroundColor: 'rgba(199,206,234,0.13)',
-        type: CategoryType.expense,
-        isDefault: true,
-        transactionCount: 8,
-      ),
-      const Category(
-        id: '6',
-        name: 'Y tế',
-        emoji: '⚕️',
-        backgroundColor: 'rgba(255,154,162,0.13)',
-        type: CategoryType.expense,
-        isDefault: true,
-        transactionCount: 5,
-      ),
-      const Category(
-        id: '7',
-        name: 'Giáo dục',
-        emoji: '📚',
-        backgroundColor: 'rgba(255,183,178,0.13)',
-        type: CategoryType.expense,
-        isDefault: true,
-        transactionCount: 3,
-      ),
-      const Category(
-        id: '8',
-        name: 'Trà sữa',
-        emoji: '🧋',
-        backgroundColor: 'rgba(255,218,193,0.13)',
-        type: CategoryType.expense,
-        isDefault: false,
-        transactionCount: 18,
-      ),
-    ];
-
-    // Sample income categories
-    _incomeCategories = [
-      const Category(
-        id: '101',
-        name: 'Lương',
-        emoji: '💰',
-        backgroundColor: 'rgba(46,204,113,0.13)',
-        type: CategoryType.income,
-        isDefault: true,
-        transactionCount: 12,
-      ),
-      const Category(
-        id: '102',
-        name: 'Thưởng',
-        emoji: '🎁',
-        backgroundColor: 'rgba(52,152,219,0.13)',
-        type: CategoryType.income,
-        isDefault: true,
-        transactionCount: 5,
-      ),
-      const Category(
-        id: '103',
-        name: 'Đầu tư',
-        emoji: '📈',
-        backgroundColor: 'rgba(155,89,182,0.13)',
-        type: CategoryType.income,
-        isDefault: true,
-        transactionCount: 8,
-      ),
-    ];
-
+  Future<void> loadCategories() async {
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      // Load expense categories
+      final expenseData = await _repository.getCategoriesByType('expense');
+      _expenseCategories = [];
+      for (final data in expenseData) {
+        final id = data['id']?.toString() ?? '';
+        final transactionCount = await _repository.getTransactionCount(int.parse(id));
+        _expenseCategories.add(
+          Category(
+            id: id,
+            name: data['name']?.toString() ?? '',
+            emoji: _getEmojiFromIcon(data['icon']?.toString()),
+            backgroundColor: _getBackgroundColor(data['color']?.toString()),
+            type: CategoryType.expense,
+            isDefault: _isDefaultCategory(data['name']?.toString() ?? ''),
+            transactionCount: transactionCount,
+          ),
+        );
+      }
+
+      // Load income categories
+      final incomeData = await _repository.getCategoriesByType('income');
+      _incomeCategories = [];
+      for (final data in incomeData) {
+        final id = data['id']?.toString() ?? '';
+        final transactionCount = await _repository.getTransactionCount(int.parse(id));
+        _incomeCategories.add(
+          Category(
+            id: id,
+            name: data['name']?.toString() ?? '',
+            emoji: _getEmojiFromIcon(data['icon']?.toString()),
+            backgroundColor: _getBackgroundColor(data['color']?.toString()),
+            type: CategoryType.income,
+            isDefault: _isDefaultCategory(data['name']?.toString() ?? ''),
+            transactionCount: transactionCount,
+          ),
+        );
+      }
+    } catch (e) {
+      _errorMessage = 'Không thể tải danh mục: $e';
+      print('Error loading categories: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Helper methods
+  String _getEmojiFromIcon(String? icon) {
+    if (icon == null) return '📦';
+    final emojiMap = {
+      'restaurant': '🍜',
+      'directions_car': '🚗',
+      'shopping_cart': '🛍️',
+      'receipt_long': '📄',
+      'attach_money': '💰',
+      'sports_esports': '🎮',
+      'local_hospital': '⚕️',
+      'school': '📚',
+      'local_cafe': '🧋',
+      'card_giftcard': '🎁',
+      'trending_up': '📈',
+    };
+    return emojiMap[icon] ?? '📦';
+  }
+
+  String _getBackgroundColor(String? color) {
+    if (color == null) return 'rgba(200,200,200,0.13)';
+    // Convert hex to rgba
+    if (color.startsWith('#') && color.length == 7) {
+      final r = int.parse(color.substring(1, 3), radix: 16);
+      final g = int.parse(color.substring(3, 5), radix: 16);
+      final b = int.parse(color.substring(5, 7), radix: 16);
+      return 'rgba($r,$g,$b,0.13)';
+    }
+    return 'rgba(200,200,200,0.13)';
+  }
+
+  bool _isDefaultCategory(String name) {
+    final defaultNames = ['Ăn uống', 'Di chuyển', 'Mua sắm', 'Hóa đơn', 'Thu nhập'];
+    return defaultNames.contains(name);
   }
 
   void setSelectedType(CategoryType type) {
@@ -129,34 +114,122 @@ class CategoryManagementViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addCategory(Category category) {
-    if (category.type == CategoryType.expense) {
-      _expenseCategories.add(category);
-    } else {
-      _incomeCategories.add(category);
-    }
-    notifyListeners();
-  }
-
-  void updateCategory(Category category) {
-    final list = category.type == CategoryType.expense
-        ? _expenseCategories
-        : _incomeCategories;
-
-    final index = list.indexWhere((c) => c.id == category.id);
-    if (index != -1) {
-      if (category.type == CategoryType.expense) {
-        _expenseCategories[index] = category;
-      } else {
-        _incomeCategories[index] = category;
-      }
+  Future<bool> addCategory(Category category) async {
+    try {
+      _isLoading = true;
       notifyListeners();
+
+      final icon = _getIconFromEmoji(category.emoji);
+      final color = _getColorFromBackground(category.backgroundColor);
+
+      await _repository.addCategory(
+        name: category.name,
+        type: category.type == CategoryType.expense ? 'expense' : 'income',
+        icon: icon,
+        color: color,
+      );
+
+      // Reload categories
+      await loadCategories();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Không thể thêm danh mục: $e';
+      print('Error adding category: $e');
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
-  void deleteCategory(String id) {
-    _expenseCategories.removeWhere((c) => c.id == id);
-    _incomeCategories.removeWhere((c) => c.id == id);
+  Future<bool> updateCategory(Category category) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final icon = _getIconFromEmoji(category.emoji);
+      final color = _getColorFromBackground(category.backgroundColor);
+
+      await _repository.updateCategory(
+        id: int.parse(category.id),
+        name: category.name,
+        icon: icon,
+        color: color,
+      );
+
+      // Reload categories
+      await loadCategories();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Không thể cập nhật danh mục: $e';
+      print('Error updating category: $e');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteCategory(String categoryId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final id = int.parse(categoryId);
+      
+      // Check if category is in use
+      final inUse = await _repository.isCategoryInUse(id);
+      if (inUse) {
+        _errorMessage = 'Không thể xóa danh mục đang được sử dụng';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      await _repository.deleteCategory(id);
+
+      // Reload categories
+      await loadCategories();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Không thể xóa danh mục: $e';
+      print('Error deleting category: $e');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  String _getIconFromEmoji(String emoji) {
+    final iconMap = {
+      '🍜': 'restaurant',
+      '🚗': 'directions_car',
+      '🛍️': 'shopping_cart',
+      '📄': 'receipt_long',
+      '💰': 'attach_money',
+      '🎮': 'sports_esports',
+      '⚕️': 'local_hospital',
+      '📚': 'school',
+      '🧋': 'local_cafe',
+      '🎁': 'card_giftcard',
+      '📈': 'trending_up',
+    };
+    return iconMap[emoji] ?? 'category';
+  }
+
+  String _getColorFromBackground(String bgColor) {
+    // Extract RGB from rgba string
+    final regex = RegExp(r'rgba\((\d+),(\d+),(\d+)');
+    final match = regex.firstMatch(bgColor);
+    if (match != null) {
+      final r = int.parse(match.group(1)!);
+      final g = int.parse(match.group(2)!);
+      final b = int.parse(match.group(3)!);
+      return '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+    }
+    return '#CCCCCC';
+  }
+
+  void clearError() {
+    _errorMessage = null;
     notifyListeners();
   }
 }
