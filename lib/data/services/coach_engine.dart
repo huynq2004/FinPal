@@ -87,7 +87,6 @@ class CoachEngine {
       
       for (final entry in topCategories.entries) {
         final categoryName = entry.key;
-        final monthlySpent = entry.value;
         
         // Calculate weekly average for this category
         final weeklyAvg = await _analyticsService.getWeeklyAverageExpenseByCategoryName(categoryName);
