@@ -160,13 +160,18 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
                                     return InkWell(
                                       borderRadius: BorderRadius.circular(16),
-                                      onTap: () {
-                                        Navigator.push(
+                                      onTap: () async {
+                                        final result = await Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => TransactionDetailScreen(tx: tx),
+                                            builder: (_) => TransactionDetailScreen(transactionId: tx.id!),
                                           ),
                                         );
+                                        // Reload if transaction was updated or deleted
+                                        if (result != null && mounted) {
+                                          final now = DateTime.now();
+                                          context.read<TransactionHistoryViewModel>().loadFromDb(now.year, now.month);
+                                        }
                                       },
                                       child: Column(
                                         children: [
