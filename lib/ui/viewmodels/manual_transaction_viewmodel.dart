@@ -13,7 +13,7 @@ class ManualTransactionViewModel extends ChangeNotifier {
   String source = 'Vietcombank';
   DateTime date = DateTime.now();
   TimeOfDay time = TimeOfDay.now();
-  String description = ''; 
+  String description = '';
   String note = '';
   String? errorMessage;
   bool isLoading = false;
@@ -26,12 +26,27 @@ class ManualTransactionViewModel extends ChangeNotifier {
   }
 
   void setType(String value) {
-    type = value;
+    // Only two types: Chi tiêu / Thu nhập; if category is Lương, keep Thu nhập
+    if (category == 'Lương') {
+      type = 'Thu nhập';
+    } else {
+      type = value == 'Thu nhập' ? 'Chi tiêu' : value;
+    }
     notifyListeners();
   }
 
   void setCategory(String value) {
     category = value;
+    // Business rule: only "Lương" is income; all others are expense
+    if (value == 'Lương') {
+      if (type != 'Thu nhập') {
+        type = 'Thu nhập';
+      }
+    } else {
+      if (type != 'Chi tiêu') {
+        type = 'Chi tiêu';
+      }
+    }
     notifyListeners();
   }
 
@@ -104,16 +119,11 @@ class ManualTransactionViewModel extends ChangeNotifier {
     }
   }
 
-  DateTime get fullDateTime => DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      );
+  DateTime get fullDateTime =>
+      DateTime(date.year, date.month, date.day, time.hour, time.minute);
 
   String get formattedDate => DateFormat('dd/MM/yyyy').format(date);
-  
+
   String get formattedTime =>
       '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
@@ -158,7 +168,7 @@ class ManualTransactionViewModel extends ChangeNotifier {
       );
 
       await repo.insertTransaction(transaction);
-      
+
       isLoading = false;
       notifyListeners();
       return true;
