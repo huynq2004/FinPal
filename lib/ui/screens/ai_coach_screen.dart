@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finpal/ui/viewmodels/ai_coach_viewmodel.dart';
 import 'package:finpal/domain/models/coach_message.dart';
+import 'package:finpal/domain/models/ai_insight.dart';
 import 'package:finpal/data/repositories/ai_coach_repository.dart';
+import 'package:finpal/ui/screens/ai_insight_detail_screen.dart';
 
 class AiCoachScreen extends StatelessWidget {
   const AiCoachScreen({super.key});
@@ -16,8 +18,7 @@ class AiCoachScreen extends StatelessWidget {
       case CoachMessageType.suggestion:
         return const Color(0xFF3E8AFF); // blue
       case CoachMessageType.info:
-      default:
-        return Colors.blueGrey;
+        return const Color(0xFF2ECC71); // green
     }
   }
 
@@ -28,7 +29,6 @@ class AiCoachScreen extends StatelessWidget {
       case CoachMessageType.suggestion:
         return Icons.lightbulb_outline;
       case CoachMessageType.info:
-      default:
         return Icons.info_outline;
     }
   }
@@ -129,16 +129,21 @@ class AiCoachScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // List
+                  // List with info banner at bottom
                   Expanded(
                     child: vm.filteredMessages.isEmpty
                         ? const Center(child: Text('Không có gợi ý phù hợp.'))
                         : ListView.separated(
                             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                            itemCount: vm.filteredMessages.length,
+                            itemCount: vm.filteredMessages.length + 1, // +1 for info banner
                             separatorBuilder: (_, __) =>
                                 const SizedBox(height: 12),
                             itemBuilder: (context, index) {
+                              // Info banner at the end
+                              if (index == vm.filteredMessages.length) {
+                                return const _InfoBanner();
+                              }
+                              
                               final msg = vm.filteredMessages[index];
                               final color = _getTypeColor(msg.type);
                               return _CoachCard(
@@ -146,11 +151,42 @@ class AiCoachScreen extends StatelessWidget {
                                 accentColor: color,
                                 iconData: _getTypeIcon(msg.type),
                                 onViewDetails: () {
-                                  // placeholder: navigate to details or show modal
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Xem chi tiết: ${msg.title}',
+                                  // Navigate to detail screen
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => AiInsightDetailScreen(
+                                        insight: AiInsight(
+                                          id: msg.id,
+                                          title: msg.title,
+                                          description: msg.description,
+                                          type: msg.type == CoachMessageType.warning
+                                              ? InsightType.warning
+                                              : msg.type == CoachMessageType.suggestion
+                                                  ? InsightType.suggestion
+                                                  : InsightType.info,
+                                          categoryName: 'Ăn uống',
+                                          spentAmount: 3500000,
+                                          limitAmount: 5000000,
+                                          daysRemaining: 10,
+                                          avgDailySpending: 350000,
+                                          maxDailySpending: 150000,
+                                          savingTips: const [
+                                            SavingTip(
+                                              id: '1',
+                                              title: 'Giảm ăn ngoài',
+                                              description: 'Mang cơm trưa 3 ngày/tuần',
+                                              savingsAmount: 450000,
+                                            ),
+                                            SavingTip(
+                                              id: '2',
+                                              title: 'Hạn chế cafe',
+                                              description: 'Từ 5 lần → 2 lần/tuần',
+                                              savingsAmount: 360000,
+                                            ),
+                                          ],
+                                        ),
+                                        recentTransactions: const [],
                                       ),
                                     ),
                                   );
@@ -222,21 +258,30 @@ class _CoachCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       elevation: 0,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: accentColor.withOpacity(0.18), width: 0.8),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _getBorderColor(message.type), 
+            width: 1.2,
+          ),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x0F000000),
-              blurRadius: 6,
+              color: Color(0x1A000000),
+              blurRadius: 3,
               offset: Offset(0, 1),
+            ),
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 2,
+              offset: Offset(0, 1),
+              spreadRadius: -1,
             ),
           ],
         ),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -247,7 +292,7 @@ class _CoachCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.12),
+                    color: _getBackgroundColor(message.type),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(iconData, color: accentColor, size: 20),
@@ -259,15 +304,20 @@ class _CoachCard extends StatelessWidget {
                     children: [
                       Text(
                         message.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(color: const Color(0xFF0F172A)),
+                        style: const TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          height: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         message.description,
                         style: const TextStyle(
                           color: Color(0xFF64748B),
-                          height: 1.4,
+                          fontSize: 14,
+                          height: 1.625,
                         ),
                       ),
                     ],
@@ -276,39 +326,158 @@ class _CoachCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    message.type == CoachMessageType.warning
-                        ? 'Cảnh báo'
-                        : 'Gợi ý tiết kiệm',
-                    style: TextStyle(color: accentColor, fontSize: 12),
+            Container(
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Color(0xFFF3F4F6),
+                    width: 1.2,
                   ),
                 ),
-                TextButton(
-                  onPressed: onViewDetails,
-                  child: const Row(
-                    children: [
-                      Text('Xem chi tiết'),
-                      SizedBox(width: 6),
-                      Icon(Icons.chevron_right, size: 18),
-                    ],
+              ),
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getBackgroundColor(message.type),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      _getTypeLabel(message.type),
+                      style: TextStyle(
+                        color: accentColor, 
+                        fontSize: 12,
+                        height: 1.33,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: onViewDetails,
+                    child: const Row(
+                      children: [
+                        Text(
+                          'Xem chi tiết',
+                          style: TextStyle(
+                            color: Color(0xFF3E8AFF),
+                            fontSize: 14,
+                            height: 1.43,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right,
+                          color: Color(0xFF3E8AFF),
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getBorderColor(CoachMessageType type) {
+    switch (type) {
+      case CoachMessageType.warning:
+        return const Color(0xFFFFC9C9);
+      case CoachMessageType.suggestion:
+        return const Color(0xFFBEDBFF);
+      case CoachMessageType.info:
+        return const Color(0xFFB9F8CF);
+    }
+  }
+
+  Color _getBackgroundColor(CoachMessageType type) {
+    switch (type) {
+      case CoachMessageType.warning:
+        return const Color(0xFFFEF2F2);
+      case CoachMessageType.suggestion:
+        return const Color(0xFFEFF6FF);
+      case CoachMessageType.info:
+        return const Color(0xFFF0FDF4);
+    }
+  }
+
+  String _getTypeLabel(CoachMessageType type) {
+    switch (type) {
+      case CoachMessageType.warning:
+        return 'Cảnh báo';
+      case CoachMessageType.suggestion:
+        return 'Gợi ý tiết kiệm';
+      case CoachMessageType.info:
+        return 'Thông tin';
+    }
+  }
+}
+
+/// Info banner component shown at bottom of list
+class _InfoBanner extends StatelessWidget {
+  const _InfoBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(21),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: const Color(0xFFF3E8FF),
+          width: 1.2,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFAF5FF), // #faf5ff
+            Color(0xFFEFF6FF), // #eff6ff
+          ],
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.auto_awesome,
+            color: Color(0xFF8B5CF6),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'AI Coach học từ thói quen của bạn',
+                  style: TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 14,
+                    height: 1.43,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Càng sử dụng lâu, gợi ý càng chính xác và phù hợp với bạn hơn.',
+                  style: TextStyle(
+                    color: const Color(0xFF64748B),
+                    fontSize: 12,
+                    height: 1.33,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
