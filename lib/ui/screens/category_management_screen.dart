@@ -229,7 +229,7 @@ class CategoryManagementScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: GestureDetector(
         onTap: () {
-          // TODO: Navigate to add category screen
+          _showAddCategoryDialog(context);
         },
         child: Container(
           width: double.infinity,
@@ -419,7 +419,7 @@ class CategoryManagementScreen extends StatelessWidget {
           // Edit button
           GestureDetector(
             onTap: () {
-              // TODO: Navigate to edit category screen
+              _showEditCategoryDialog(context, category);
             },
             child: Container(
               width: 36,
@@ -516,6 +516,262 @@ class CategoryManagementScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAddCategoryDialog(BuildContext context) {
+    final vm = Provider.of<CategoryManagementViewModel>(context, listen: false);
+    final nameController = TextEditingController();
+    String selectedEmoji = '🍜';
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Thêm danh mục'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tên danh mục',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Chọn biểu tượng:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ['🍜', '🚗', '🛍️', '📄', '💰', '🎮', '⚕️', '📚', '🧋', '🎁', '📈', '📦']
+                      .map((emoji) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedEmoji = emoji;
+                              });
+                            },
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: selectedEmoji == emoji
+                                    ? const Color(0xFF3E8AFF).withOpacity(0.2)
+                                    : Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: selectedEmoji == emoji
+                                      ? const Color(0xFF3E8AFF)
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng nhập tên danh mục')),
+                  );
+                  return;
+                }
+
+                final category = Category(
+                  id: '0',
+                  name: nameController.text.trim(),
+                  emoji: selectedEmoji,
+                  type: vm.selectedType,
+                  backgroundColor: 'rgba(62,138,255,0.13)',
+                  isDefault: false,
+                  transactionCount: 0,
+                );
+
+                final success = await vm.addCategory(category);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đã thêm danh mục')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(vm.errorMessage ?? 'Lỗi khi thêm danh mục')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Thêm'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditCategoryDialog(BuildContext context, Category category) {
+    final vm = Provider.of<CategoryManagementViewModel>(context, listen: false);
+    final nameController = TextEditingController(text: category.name);
+    String selectedEmoji = category.emoji;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Sửa danh mục'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tên danh mục',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Chọn biểu tượng:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ['🍜', '🚗', '🛍️', '📄', '💰', '🎮', '⚕️', '📚', '🧋', '🎁', '📈', '📦']
+                      .map((emoji) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedEmoji = emoji;
+                              });
+                            },
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: selectedEmoji == emoji
+                                    ? const Color(0xFF3E8AFF).withOpacity(0.2)
+                                    : Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: selectedEmoji == emoji
+                                      ? const Color(0xFF3E8AFF)
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                ),
+                const SizedBox(height: 16),
+                if (!category.isDefault)
+                  TextButton.icon(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Xác nhận xóa'),
+                          content: Text('Bạn có chắc muốn xóa danh mục "${category.name}"?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Hủy'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              child: const Text('Xóa'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true && context.mounted) {
+                        final success = await vm.deleteCategory(category.id);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã xóa danh mục')),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(vm.errorMessage ?? 'Lỗi khi xóa danh mục')),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    label: const Text('Xóa danh mục', style: TextStyle(color: Colors.red)),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng nhập tên danh mục')),
+                  );
+                  return;
+                }
+
+                final updatedCategory = Category(
+                  id: category.id,
+                  name: nameController.text.trim(),
+                  emoji: selectedEmoji,
+                  type: category.type,
+                  backgroundColor: category.backgroundColor,
+                  isDefault: category.isDefault,
+                  transactionCount: category.transactionCount,
+                );
+
+                final success = await vm.updateCategory(updatedCategory);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đã cập nhật danh mục')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(vm.errorMessage ?? 'Lỗi khi cập nhật danh mục')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
+        ),
       ),
     );
   }
