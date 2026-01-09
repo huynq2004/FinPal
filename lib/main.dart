@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'data/db/database_provider.dart';
 
-import 'ui/root_scaffold.dart';
+import 'ui/screens/splash_screen.dart';
 
 // ViewModels (Sprint 1)
 import 'ui/viewmodels/dashboard_viewmodel.dart';
@@ -34,7 +34,7 @@ class FinPalApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'FinPal',
         theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
-        home: const RootScaffold(),
+        home: const SplashScreen(),
       ),
     );
   }
