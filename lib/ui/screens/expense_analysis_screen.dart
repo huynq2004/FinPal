@@ -286,6 +286,9 @@ class _ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen> {
     final maxAmount = vm.expenseItems.isNotEmpty
         ? vm.expenseItems.map((e) => e.amount).reduce((a, b) => a > b ? a : b)
         : 1;
+    
+    // Prevent NaN errors
+    if (maxAmount <= 0) return const SizedBox();
 
     return Column(
       children: vm.expenseItems.map((item) {
@@ -324,9 +327,10 @@ class _ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen> {
                       ),
                       Container(
                         height: 32,
-                        width:
-                            (percentage / 100) *
-                            (MediaQuery.of(context).size.width - 150),
+                        width: percentage.isFinite && percentage > 0
+                            ? (percentage / 100) *
+                                (MediaQuery.of(context).size.width - 150)
+                            : 0,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF3E8AFF), Color(0xFF2563EB)],

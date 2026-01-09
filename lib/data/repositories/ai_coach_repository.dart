@@ -1,6 +1,43 @@
 import 'package:finpal/domain/models/coach_message.dart';
+import 'package:finpal/data/services/analytics_service.dart';
+import 'package:finpal/data/repositories/budget_repository.dart';
+import 'package:finpal/data/services/coach_engine.dart';
 
 class AiCoachRepository {
+  final AnalyticsService _analyticsService;
+  final BudgetRepository _budgetRepository;
+  late final CoachEngine _coachEngine;
+
+  AiCoachRepository(this._analyticsService, this._budgetRepository) {
+    _coachEngine = CoachEngine(_analyticsService, _budgetRepository);
+  }
+
+  /// Lấy insights dựa trên dữ liệu thực từ DB
+  /// Uses CoachEngine for S3-C2 (budget warnings) and S4-C1 (savings suggestions)
+  Future<List<CoachMessage>> getRealInsights() async {
+    final now = DateTime.now();
+    final year = now.year;
+    final month = now.month;
+
+    try {
+      // Use CoachEngine to generate all insights
+      return await _coachEngine.generateAllInsights(year: year, month: month);
+    } catch (e) {
+      print('❌ [AiCoachRepository] Lỗi getRealInsights: $e');
+      // Fallback to welcome message on error
+      return [
+        const CoachMessage(
+          id: 'error_fallback',
+          title: 'Đang tải dữ liệu...',
+          description: 'FinPal đang chuẩn bị phân tích chi tiêu của bạn. Vui lòng thử lại sau.',
+          type: CoachMessageType.suggestion,
+        ),
+      ];
+    }
+  }
+
+  /// Deprecated: Giữ lại để tương thích với code cũ
+  @Deprecated('Use getRealInsights() instead')
   Future<List<CoachMessage>> getFakeMessages() async {
     return const [
       CoachMessage(
