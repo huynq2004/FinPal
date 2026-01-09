@@ -229,6 +229,88 @@ class CoachEngine {
     return messages;
   }
 
+  /// S4-C2: Detect recurring bill anomalies
+  /// Compares current month bill expenses with 3-month average
+  Future<List<CoachMessage>> generateRecurringBillAnomalies({
+    required int year,
+    required int month,
+  }) async {
+    final messages = <CoachMessage>[];
+    final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '₫', decimalDigits: 0);
+
+    try {
+      // Bill categories (recurring expenses)
+      final billCategoryNames = ['Hóa đơn', 'Điện nước', 'Internet', 'Thuê nhà', 'Điện thoại'];
+      
+      for (final categoryName in billCategoryNames) {
+        // Get current month expense
+        final currentExpense = await _analyticsService.getExpenseByCategoryName(year, month, categoryName);
+        
+        // Skip if no expense this month
+        if (currentExpense == 0) continue;
+        
+        // Calculate 3-month average (current month - 1, -2, -3)
+        var totalPast3Months = 0;
+        var monthsWithData = 0;
+        
+        for (var i = 1; i <= 3; i++) {
+          final pastDate = DateTime(year, month).subtract(Duration(days: 30 * i));
+          final pastYear = pastDate.year;
+          final pastMonth = pastDate.month;
+          
+          final pastExpense = await _analyticsService.getExpenseByCategoryName(pastYear, pastMonth, categoryName);
+          if (pastExpense > 0) {
+            totalPast3Months += pastExpense;
+            monthsWithData++;
+          }
+        }
+        
+        // Need at least 2 months of historical data to detect anomaly
+        if (monthsWithData < 2) continue;
+        
+        final averagePast3Months = (totalPast3Months / monthsWithData).round();
+        
+        // Skip if average is too small (< 50k) to avoid false positives
+        if (averagePast3Months < 50000) continue;
+        
+        // Calculate difference percentage
+        final difference = currentExpense - averagePast3Months;
+        final differencePercent = ((difference / averagePast3Months) * 100).abs().round();
+        
+        // Generate alert if difference is significant (> 30%)
+        if (differencePercent > 30) {
+          if (currentExpense > averagePast3Months) {
+            // Bill higher than usual
+            messages.add(CoachMessage(
+              id: 'bill_anomaly_high_$categoryName',
+              title: '🔔 Chi "$categoryName" tăng bất thường',
+              description: 'Chi "$categoryName" tháng này là ${currencyFormat.format(currentExpense)}, '
+                  'cao hơn $differencePercent% so với trung bình 3 tháng trước '
+                  '(${currencyFormat.format(averagePast3Months)}). Hãy kiểm tra lại hóa đơn!',
+              type: CoachMessageType.warning,
+            ));
+          } else {
+            // Bill lower than usual (could be good news or missing data)
+            messages.add(CoachMessage(
+              id: 'bill_anomaly_low_$categoryName',
+              title: '💡 Chi "$categoryName" thấp hơn bình thường',
+              description: 'Chi "$categoryName" tháng này là ${currencyFormat.format(currentExpense)}, '
+                  'thấp hơn $differencePercent% so với trung bình 3 tháng trước '
+                  '(${currencyFormat.format(averagePast3Months)}). Tuyệt vời nếu bạn đã tiết kiệm được!',
+              type: CoachMessageType.info,
+            ));
+          }
+        }
+      }
+
+      print('💡 [CoachEngine] Generated ${messages.length} recurring bill anomaly alerts');
+    } catch (e) {
+      print('❌ [CoachEngine] Error generating recurring bill anomalies: $e');
+    }
+
+    return messages;
+  }
+
   /// Generate monthly summary
   Future<List<CoachMessage>> generateMonthlySummary({
     required int year,
@@ -288,19 +370,23 @@ class CoachEngine {
     final highSpendingAlerts = await generateHighSpendingAlerts(year: year, month: month);
     allMessages.addAll(highSpendingAlerts);
 
-    // Priority 3: Savings suggestions
+    // Priority 3: Recurring bill anomalies (S4-C2)
+    final billAnomalies = await generateRecurringBillAnomalies(year: year, month: month);
+    allMessages.addAll(billAnomalies);
+
+    // Priority 4: Savings suggestions
     final savingsSuggestions = await generateSavingsSuggestions(year: year, month: month);
     allMessages.addAll(savingsSuggestions);
 
-    // Priority 4: Balance alerts
+    // Priority 5: Balance alerts
     final balanceAlerts = await generateBalanceAlerts(year: year, month: month);
     allMessages.addAll(balanceAlerts);
 
-    // Priority 5: Growth warnings
+    // Priority 6: Growth warnings
     final growthWarnings = await generateGrowthWarnings(year: year, month: month);
     allMessages.addAll(growthWarnings);
 
-    // Priority 6: Monthly summary
+    // Priority 7: Monthly summary
     final summary = await generateMonthlySummary(year: year, month: month);
     allMessages.addAll(summary);
 
